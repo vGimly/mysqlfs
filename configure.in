@@ -11,7 +11,7 @@ AC_PREFIX_PROGRAM([id])
 
 AC_ENABLE_SHARED(no)
 
-AC_DEFINE(FUSE_USE_VERSION, 25, [Fuse API Version])
+AC_DEFINE(FUSE_USE_VERSION, 26, [Fuse API Version])
 AC_DEFINE(MYSQL_MIN_VERSION, 50000, [Minimal supported MySQL version])
 
 AC_DEFINE(_FILE_OFFSET_BITS,64,[Use 64 bits file offsets])
@@ -21,7 +21,7 @@ AC_ARG_WITH(fuse, [ AS_HELP_STRING([--with-fuse=DIR],[fuse directory ])])
 AC_ARG_WITH(testfile, [ AS_HELP_STRING([--with-testfile=FILE],[file to test copying to the filesystem])],,[with_testfile=configure])
 
 dnl Note: this is a GCC extension, this kills portability
-CFLAGS_ADD="-Wall -Werror"
+CFLAGS_ADD="-Wall"
 
 dnl Checks for programs.
 AC_PROG_CC

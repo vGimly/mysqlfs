@@ -1,8 +1,7 @@
 /*
   mysqlfs - MySQL Filesystem
   Copyright (C) 2006 Tsukasa Hamano <code@cuspy.org>
-  $Id$
-
+   
   This program can be distributed under the terms of the GNU GPL.
   See the file COPYING.
 */
@@ -13,7 +12,7 @@
 #define PATH_MAX 1024
 
 /** size of a single datablock written to the database; should be less than the size of a "blob" or mysqlfs.sql needs to be altered */
-#define DATA_BLOCK_SIZE	4096
+#define DATA_BLOCK_SIZE	131072
 
 /** basic preprocessor-phase maximum macro */
 #define MIN(a,b)	((a) < (b) ? (a) : (b))

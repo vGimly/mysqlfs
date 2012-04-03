@@ -1,3 +1,5 @@
+* Implement correct command line parsing to activate big-writes
+
 * Implement more robust connection pool
 	- avoid -EMFILE when there are no more free connections
 

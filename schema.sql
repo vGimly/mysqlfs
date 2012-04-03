@@ -1,4 +1,3 @@
--- MySQL dump 10.10
 --
 -- Host: localhost    Database: mysqlfs
 -- ------------------------------------------------------
@@ -22,10 +21,10 @@
 DROP TABLE IF EXISTS `data_blocks`;
 CREATE TABLE `data_blocks` (
   `inode` bigint(20) NOT NULL,
-  `seq` int unsigned not null,
-  `data` blob ,
-  PRIMARY KEY  (`inode`, `seq`)
-) ENGINE=MyISAM DEFAULT CHARSET=binary;
+  `seq` int(10) unsigned NOT NULL,
+  `data` longblob,
+  PRIMARY KEY (`inode`,`seq`)
+) ENGINE=InnoDB DEFAULT CHARSET=binary;
 
 --
 -- Table structure for table `inodes`
@@ -45,7 +44,7 @@ CREATE TABLE `inodes` (
   `size` bigint(20) NOT NULL default '0',
   PRIMARY KEY  (`inode`),
   KEY `inode` (`inode`,`inuse`,`deleted`)
-) ENGINE=MyISAM DEFAULT CHARSET=binary;
+) ENGINE=InnoDB DEFAULT CHARSET=binary;
 
 /*!50003 SET @OLD_SQL_MODE=@@SQL_MODE*/;
 DELIMITER ;;
@@ -67,7 +66,7 @@ CREATE TABLE `tree` (
   UNIQUE KEY `name` (`name`,`parent`),
   KEY `inode` (`inode`),
   KEY `parent` (`parent`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

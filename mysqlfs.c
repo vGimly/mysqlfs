@@ -558,6 +558,48 @@ static int mysqlfs_rename(const char *from, const char *to)
     return ret;
 }
 
+/* All the new FUSE 2.6 functions start from here.... */
+/* All the new FUSE 2.6 functions start from here.... */
+/* All the new FUSE 2.6 functions start from here.... */
+
+/**
+
+int(* fuse_operations::create)(const char *, mode_t, struct fuse_file_info *)
+Create and open a file
+
+If the file does not exist, first create it with the specified mode, and then open it.
+
+If this method is not implemented or under Linux kernel versions earlier than 2.6.15, the mknod() and open() methods will be called instead.
+
+Introduced in version 2.5
+
+**/
+static int mysqlfs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
+{
+
+   int ret;
+   dev_t rdev;
+
+   rdev = S_IFREG;
+
+   log_printf(LOG_ERROR, "path %s mode %o \n", path, mode);
+
+   ret = mysqlfs_mknod(path, mode, rdev);
+   if(ret<0){
+	log_printf(LOG_ERROR, "Error create_mknod : Error creating node\n");
+	return ret;
+   }
+
+   ret = mysqlfs_open(path, fi);
+   if(ret<0){
+	log_printf(LOG_ERROR, "Error create_open: Error opening path\n");
+	return ret;
+   }
+
+   return 0;
+
+}
+
 /** used below in fuse_main() to define the entry points for a FUSE filesystem; this is the same VMT-like jump table used throughout the UNIX kernel. */
 static struct fuse_operations mysqlfs_oper = {
     .getattr	= mysqlfs_getattr,
@@ -578,6 +620,7 @@ static struct fuse_operations mysqlfs_oper = {
     .symlink	= mysqlfs_symlink,
     .readlink	= mysqlfs_readlink,
     .rename	= mysqlfs_rename,
+    .create	= mysqlfs_create,
 };
 
 /** print out a brief usage aide-memoire to stderr */
@@ -735,7 +778,7 @@ int main(int argc, char *argv[])
 
     log_file = log_init(opt.logfile, 1);
 
-    fuse_main(args.argc, args.argv, &mysqlfs_oper);
+    fuse_main(args.argc, args.argv, &mysqlfs_oper, NULL);
     fuse_opt_free_args(&args);
 
     pool_cleanup();
