@@ -1,11 +1,11 @@
 /*
-  mysqlfs - MySQL Filesystem
-  Copyright (C) 2006 Tsukasa Hamano <code@cuspy.org>
-  $Id: mysqlfs.c,v 1.18 2006/09/17 11:09:32 ludvigm Exp $
-
-  This program can be distributed under the terms of the GNU GPL.
-  See the file COPYING.
-*/
+ * mysqlfs - MySQL Filesystem
+ * Copyright (C) 2006 Tsukasa Hamano <code@cuspy.org>
+ * 
+ *
+ * This program can be distributed under the terms of the GNU GPL.
+ * See the file COPYING.
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -111,7 +111,7 @@ static int mysqlfs_mknod(const char *path, mode_t mode, dev_t rdev)
     int ret;
     MYSQL *dbconn;
     long parent_inode;
-    char dir_path[PATH_MAX];
+    char * dir_path;
 
     log_printf(LOG_D_CALL, "mysqlfs_mknod(\"%s\", %o): %s\n", path, mode,
 	       S_ISREG(mode) ? "file" :
@@ -123,20 +123,22 @@ static int mysqlfs_mknod(const char *path, mode_t mode, dev_t rdev)
         log_printf(LOG_ERROR, "Error: Filename too long\n");
         return -ENAMETOOLONG;
     }
-    strncpy(dir_path, path, PATH_MAX);
-    dirname(dir_path);
 
+    dir_path = dirname(path);
+    
     if ((dbconn = pool_get()) == NULL)
       return -EMFILE;
 
     parent_inode = query_inode(dbconn, dir_path);
     if(parent_inode < 0){
+        log_printf(LOG_ERROR, "Error getting parent inode dirpath %s\n", dir_path);
         pool_put(dbconn);
         return -ENOENT;
     }
 
     ret = query_mknod(dbconn, path, mode, rdev, parent_inode, S_ISREG(mode) || S_ISLNK(mode));
     if(ret < 0){
+        log_printf(LOG_ERROR, "Error invoking query mknod\n");
         pool_put(dbconn);
         return ret;
     }
@@ -149,7 +151,7 @@ static int mysqlfs_mkdir(const char *path, mode_t mode){
     int ret;
     MYSQL *dbconn;
     long inode;
-    char dir_path[PATH_MAX];
+    char * dir_path;
 
     log_printf(LOG_D_CALL, "mysqlfs_mkdir(\"%s\", 0%o)\n", path, mode);
     
@@ -157,8 +159,8 @@ static int mysqlfs_mkdir(const char *path, mode_t mode){
         log_printf(LOG_ERROR, "Error: Filename too long\n");
         return -ENAMETOOLONG;
     }
-    strncpy(dir_path, path, PATH_MAX);
-    dirname(dir_path);
+    
+    dir_path = dirname(path);
 
     if ((dbconn = pool_get()) == NULL)
       return -EMFILE;
