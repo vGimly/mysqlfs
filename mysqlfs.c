@@ -154,7 +154,8 @@ static int mysqlfs_mkdir(const char *path, mode_t mode){
     int ret;
     MYSQL *dbconn;
     long inode;
-    char * dir_path;
+    char *tmppath;
+    char *dir_path;
 
     log_printf(LOG_D_CALL, "mysqlfs_mkdir(\"%s\", 0%o)\n", path, mode);
     
