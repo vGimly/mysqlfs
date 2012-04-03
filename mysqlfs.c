@@ -111,7 +111,8 @@ static int mysqlfs_mknod(const char *path, mode_t mode, dev_t rdev)
     int ret;
     MYSQL *dbconn;
     long parent_inode;
-    char * dir_path;
+    char *tmppath;
+    char *dir_path;
 
     log_printf(LOG_D_CALL, "mysqlfs_mknod(\"%s\", %o): %s\n", path, mode,
 	       S_ISREG(mode) ? "file" :
@@ -124,7 +125,9 @@ static int mysqlfs_mknod(const char *path, mode_t mode, dev_t rdev)
         return -ENAMETOOLONG;
     }
 
-    dir_path = dirname(path);
+    /* this is crazy bullshit for linux compatibility */
+    strncpy(tmppath, path, PATH_MAX);
+    dir_path = dirname(tmppath);
     
     if ((dbconn = pool_get()) == NULL)
       return -EMFILE;
@@ -159,9 +162,11 @@ static int mysqlfs_mkdir(const char *path, mode_t mode){
         log_printf(LOG_ERROR, "Error: Filename too long\n");
         return -ENAMETOOLONG;
     }
+ 
+    /* this is crazy bullshit for linux compatibility */
+    strncpy(tmppath, path, PATH_MAX);
+    dir_path = dirname(tmppath);
     
-    dir_path = dirname(path);
-
     if ((dbconn = pool_get()) == NULL)
       return -EMFILE;
 
