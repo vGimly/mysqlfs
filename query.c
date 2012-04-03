@@ -184,13 +184,22 @@ int query_inode_full(MYSQL *mysql, const char *path, char *name, size_t name_len
     free(pathptr_saved);
 
     // TODO: Only run subquery when pointer to nlinks != NULL, otherwise we don't need it.
-    snprintf(sql, SQL_MAX, "SELECT t%d.inode, t%d.name, t%d.parent, "
-	     		   "       (SELECT COUNT(inode) FROM tree AS t%d WHERE t%d.inode=t%d.inode) "
-			   "               AS nlinks "
-	     		   "FROM %s WHERE %s",
-	     depth, depth, depth, 
-	     depth+1, depth+1, depth,
-	     sql_from, sql_where);
+    if (nlinks != NULL) {
+        snprintf(sql, SQL_MAX, "SELECT t%d.inode, t%d.name, t%d.parent, "
+        	     		   "       (SELECT COUNT(inode) FROM tree AS t%d WHERE t%d.inode=t%d.inode) "
+        			   "               AS nlinks "
+        	     		   "FROM %s WHERE %s",
+        	     depth, depth, depth, 
+        	     depth+1, depth+1, depth,
+        	     sql_from, sql_where);
+    }
+    else
+    {
+        snprintf(sql, SQL_MAX, "SELECT t%d.inode, t%d.name, t%d.parent, 1 AS nlinks "
+        	     		   "FROM %s WHERE %s",
+        	     depth, depth, depth, 
+        	     sql_from, sql_where);
+    }
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     ret = mysql_query(mysql, sql);
     if(ret){
