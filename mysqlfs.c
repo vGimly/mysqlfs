@@ -653,6 +653,7 @@ enum
     KEY_DEBUG_DNQ,	/**< debug: Dump (Config) and Quit */
     KEY_HELP,
     KEY_VERSION,
+    KEY_BIGWRITES,
   };
 
 /** fuse_opt for use with fuse_opt_parse() */
@@ -686,6 +687,7 @@ static struct fuse_opt mysqlfs_opts[] =
     MYSQLFS_OPT_KEY( "-u %s",		user,	0),
 
     FUSE_OPT_KEY("debug-dnq",	KEY_DEBUG_DNQ),
+    FUSE_OPT_KEY("big_writes",  KEY_BIGWRITES),
     FUSE_OPT_KEY("-v",		KEY_VERSION),
     FUSE_OPT_KEY("--version",	KEY_VERSION),
     FUSE_OPT_KEY("--help",	KEY_HELP),
@@ -730,7 +732,11 @@ static int mysqlfs_opt_proc(void *data, const char *arg, int key,
         case KEY_VERSION: /* show version and quit */
 	    fprintf (stderr, "%s-%s fuse-%2.1f\n\n", PACKAGE_TARNAME, PACKAGE_VERSION, ((double) FUSE_USE_VERSION)/10.0);
 	    exit (0);
-
+            
+        case KEY_BIGWRITES:
+                fuse_opt_add_arg(outargs, "-obig_writes");
+                break;
+                
         default: /* key != FUSE_OPT_KEY_OPT */
             fuse_opt_add_arg(outargs, arg);
             return 0;
