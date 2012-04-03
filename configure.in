@@ -9,7 +9,7 @@ AC_CONFIG_SRCDIR([configure.in])
 AC_CONFIG_TESTDIR([tests-autotest])
 AC_PREFIX_PROGRAM([id])
 
-AC_ENABLE_SHARED(no)
+dnl AC_ENABLE_SHARED(no)
 
 AC_DEFINE(FUSE_USE_VERSION, 26, [Fuse API Version])
 AC_DEFINE(MYSQL_MIN_VERSION, 50000, [Minimal supported MySQL version])
@@ -25,7 +25,7 @@ CFLAGS_ADD="-Wall"
 
 dnl Checks for programs.
 AC_PROG_CC
-AC_PROG_LIBTOOL
+dnl AC_PROG_LIBTOOL
 AC_CHECK_PROGS(DOXYGEN, [doxygen], missing)
 AM_CONDITIONAL(DO_DOXYGEN, test x$DOXYGEN != xmissing)
 AC_CHECK_PROGS(RPMBUILD, [rpmbuild], missing)
