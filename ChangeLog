@@ -1,3 +1,10 @@
+2012-04-04  Andrea Brancatelli <andrea@brancatelli.it>
+        * Added support for big-writes
+        * Added support for FreeBSD build
+        * Increased support to FUSE API 2.6
+        * Switched for MyISAM to InnoDB
+        * Basic support for transactions
+
 2008-04-10  Florian Wiessner <f.wiessner@smart-weblications.de>
 	* Updated pool.h
 
