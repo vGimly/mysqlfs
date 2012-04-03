@@ -628,19 +628,19 @@ void usage(){
     fprintf(stderr,
             "usage: mysqlfs [opts] <mountpoint>\n\n");
     fprintf(stderr,
-            "       mysqlfs [-osocket=/tmp/mysql.sock] [-oport=####] -ohost=host -ouser=user -opassword=password "
+            "       mysqlfs [-osocket=/tmp/mysql.sock] [-obig_writes] [-oport=####] -ohost=host -ouser=user -opassword=password "
             "-odatabase=database ./mountpoint\n");
     fprintf(stderr,
-            "       mysqlfs [-d] [-ologfile=filename] -ohost=host -ouser=user -opassword=password "
+            "       mysqlfs [-d] [-ologfile=filename] [-obig_writes] -ohost=host -ouser=user -opassword=password "
             "-odatabase=database ./mountpoint\n");
     fprintf(stderr,
-            "       mysqlfs [-mycnf_group=group_name] -ohost=host -ouser=user -opassword=password "
+            "       mysqlfs [-mycnf_group=group_name] [-obig_writes] -ohost=host -ouser=user -opassword=password "
             "-odatabase=database ./mountpoint\n");
     fprintf(stderr, "\n(mimick mysql options)\n");
     fprintf(stderr,
-            "       mysqlfs --host=host --user=user --password=password --database=database ./mountpoint\n");
+            "       mysqlfs [-obig_writes] --host=host --user=user --password=password --database=database ./mountpoint\n");
     fprintf(stderr,
-            "       mysqlfs -h host -u user --password=password -D database ./mountpoint\n");
+            "       mysqlfs [-obig_writes] -h host -u user --password=password -D database ./mountpoint\n");
 }
 
 /** macro to set a call value with a default -- defined yet? */
