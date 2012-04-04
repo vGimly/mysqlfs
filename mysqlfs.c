@@ -111,7 +111,7 @@ static int mysqlfs_mknod(const char *path, mode_t mode, dev_t rdev)
     int ret;
     MYSQL *dbconn;
     long parent_inode;
-    char *tmppath;
+    char tmppath[PATH_MAX];
     char *dir_path;
 
     log_printf(LOG_D_CALL, "mysqlfs_mknod(\"%s\", %o): %s\n", path, mode,
@@ -125,10 +125,10 @@ static int mysqlfs_mknod(const char *path, mode_t mode, dev_t rdev)
         return -ENAMETOOLONG;
     }
 
-    /* this is crazy bullshit for linux compatibility */
-    strncpy(tmppath, path, PATH_MAX);
+    /* this is crazy bullshit for linux/freebsd/posix/whateverelse compatibility */
+    strcpy(tmppath, path);
     dir_path = dirname(tmppath);
-    
+
     if ((dbconn = pool_get()) == NULL)
       return -EMFILE;
 
@@ -154,7 +154,7 @@ static int mysqlfs_mkdir(const char *path, mode_t mode){
     int ret;
     MYSQL *dbconn;
     long inode;
-    char *tmppath;
+    char tmppath[PATH_MAX];
     char *dir_path;
 
     log_printf(LOG_D_CALL, "mysqlfs_mkdir(\"%s\", 0%o)\n", path, mode);
@@ -165,7 +165,7 @@ static int mysqlfs_mkdir(const char *path, mode_t mode){
     }
  
     /* this is crazy bullshit for linux compatibility */
-    strncpy(tmppath, path, PATH_MAX);
+    strcpy(tmppath, path);
     dir_path = dirname(tmppath);
     
     if ((dbconn = pool_get()) == NULL)
