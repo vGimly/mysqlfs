@@ -1,5 +1,10 @@
 * Implement correct command line parsing to activate big-writes
 
+* Correct query_inode. Current implementation seems very expensive.
+	- idea is to have an easy query_inode and a complex query_inode_full
+	- query_inode should be a recursive function that walks the path it receives
+	- no join to gain maximum speed from mysql query cache
+
 * Implement more robust connection pool
 	- avoid -EMFILE when there are no more free connections
 
@@ -14,3 +19,4 @@
 
 * Implement support for xattr and acl
 	- FUSE has the methods at least for xattr
+
