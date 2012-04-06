@@ -278,7 +278,6 @@ long seek_inode(MYSQL *mysql, const char *path, const long *parent_id)
   char LEFT_PART[255];
   char RIGHT_PART[255];
   char *breaking_point;
-  int len;
 
   long id;
   long ret;
@@ -291,13 +290,13 @@ long seek_inode(MYSQL *mysql, const char *path, const long *parent_id)
   /* OK, let's see where's the first Slash... */
   breaking_point = strchr(path, '/');
 
-  if (p != NULL)
+  if (breaking_point != NULL)
   {
 	/* There probably is something else after... */
   	int len = breaking_point - path;
 	strncpy(LEFT_PART, path, len);
 	LEFT_PART[len] = '\0';
-	strcpy(RIGHT, breaking_point + 1);
+	strcpy(RIGHT_PART, breaking_point + 1);
   }
   else
   {
