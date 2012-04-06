@@ -641,8 +641,8 @@ static int mysqlfs_statfs(const char *path, struct statvfs *buf)
 	buf->f_ffree = 1024; /* arbitrary value */
 	buf->f_favail = buf->f_ffree;
 
-	buf->f_blocks = query_total_blocks(dbconn)+1024;
-	buf->f_bfree = 1024; /* arbitrary value */
+	buf->f_blocks = query_total_blocks(dbconn)+10240;
+	buf->f_bfree = 10240; /* arbitrary value */
 	buf->f_bavail = buf->f_bfree;
 
 	pool_put(dbconn);
