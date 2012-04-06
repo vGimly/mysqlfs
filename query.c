@@ -311,7 +311,7 @@ long seek_inode(MYSQL *mysql, const char *path, const long *parent_id)
   }
   else
   {
-    snprintf(sql, SQL_MAX, "SELECT inode FROM tree WHERE name = %s AND parent = %ld", LEFT_PART, parent_id);
+    snprintf(sql, SQL_MAX, "SELECT inode FROM tree WHERE name = '%s' AND parent = %ld", LEFT_PART, parent_id);
   }
 
   log_printf(LOG_D_SQL, "sql=%s\n", sql);
