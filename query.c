@@ -1477,7 +1477,7 @@ int query_fsck(MYSQL *mysql)
  * @return total inode numers
  * @param mysql handle to connection to the database
  */
-long query_total_inodes(MYSQL *mysql)
+unsigned long query_total_inodes(MYSQL *mysql)
 {
     size_t ret;
     char sql[SQL_MAX];
@@ -1511,7 +1511,8 @@ long query_total_inodes(MYSQL *mysql)
     }
 
     if(row[0]){
-        ret = atol(row[0]);
+        ret = strtoul(row[0]);
+	log_printf(LOG_ERROR, "Total inodes: %lu\n", ret);
     }else{
         ret = 0;
     }
@@ -1526,7 +1527,7 @@ long query_total_inodes(MYSQL *mysql)
  * @return total data blocks
  * @param mysql handle to connection to the database
  */
-long query_total_blocks(MYSQL *mysql)
+unsigned long query_total_blocks(MYSQL *mysql)
 {
     size_t ret;
     char sql[SQL_MAX];
@@ -1560,7 +1561,7 @@ long query_total_blocks(MYSQL *mysql)
     }
 
     if(row[0]){
-        ret = atol(row[0]);
+        ret = strtoul(row[0]);
     }else{
         ret = 0;
     }
