@@ -1,9 +1,12 @@
 * Implement correct command line parsing to activate big-writes
 
-* Correct query_inode. Current implementation seems very expensive.
-	- idea is to have an easy query_inode and a complex query_inode_full
-	- query_inode should be a recursive function that walks the path it receives
-	- no join to gain maximum speed from mysql query cache
+* Correct query_inode_full. Current implementation seems very expensive. 
+	- query_inode_full should be a recursive function that walks the path it receives 
+	- no join to gain maximum speed from mysql query cache 
+
+* Correct query_inode. Current implementation seems very expensive. ## DONE ##
+	- query_inode should be a recursive function that walks the path it receives ## DONE ##
+	- no join to gain maximum speed from mysql query cache ## DONE ##
 
 * Implement more robust connection pool
 	- avoid -EMFILE when there are no more free connections
