@@ -252,7 +252,7 @@ int query_inode_full(MYSQL *mysql, const char *path, char *name, size_t name_len
  * @param mysql handle to connection to the database
  * @param path (full) pathname of inode to find
  */
-long old_query_inode(MYSQL *mysql, const char *path)
+long query_inode(MYSQL *mysql, const char *path)
 {
     long inode, ret;
     
@@ -265,6 +265,9 @@ long old_query_inode(MYSQL *mysql, const char *path)
 /**
  * New Query Inode function. Recursively checks for a path in the tree table
  * and returns it's ID.
+ *
+ * See the note in slow_query_inode(): this will be trashed soon as it proved out being
+ * slower than the original implementation
  *
  * @return ID of inode
  * @return < 0 in case of failure (see query_inode_full)
@@ -355,8 +358,16 @@ long seek_inode(MYSQL *mysql, const char *path, const long *parent_id)
 
 }
 
+/**
+ * This (+ seek_inode) was an attempt of changing the way query_inode was working
+ *
+ * It's working, but it seems to be slower than the standard old implementation
+ *
+ * I'll keep them here for a while, but they will be probably dumped soon.
+ *
+ */ 
 
-long query_inode(MYSQL *mysql, const char *path)
+long slow_query_inode(MYSQL *mysql, const char *path)
 {
 
   return seek_inode(mysql, path, NULL);
