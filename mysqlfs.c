@@ -606,6 +606,51 @@ static int mysqlfs_create(const char *path, mode_t mode, struct fuse_file_info *
 
 }
 
+/**
+
+int(* fuse_operations::statfs)(const char *, struct statvfs *)
+Get file system statistics
+
+The 'f_frsize', 'f_favail', 'f_fsid' and 'f_flag' fields are ignored
+
+Replaced 'struct statfs' parameter with 'struct statvfs' in version 2.5
+
+**/
+static int mysqlfs_statfs(const char *path, struct statvfs *buf)
+{
+
+	MYSQL *dbconn;
+
+	log_printf(LOG_D_CALL, "mysqlfs_unlink(\"%s\")\n", path);
+
+	if ((dbconn = pool_get()) == NULL)
+		return -EMFILE;
+
+
+        buf->f_namemax = 255;
+
+        buf->f_bsize = DATA_BLOCK_SIZE;
+
+        /*
+         * df seems to use f_bsize instead of f_frsize, so make them
+         * the same
+         */
+        buf->f_frsize = buf->f_bsize;
+
+	buf->f_files = query_total_inodes(dbconn);
+	buf->f_ffree = buf->f_files + 1024; /* arbitrary value */
+	buf->f_favail = buf->f_ffree;
+
+	buf->f_blocks = query_total_blocks(dbconn);
+	buf->f_bfree = buf->f_blocks + 1024; /* arbitrary value */
+	buf->f_bavail = buf->f_bfree;
+
+	pool_put(dbconn);
+
+        return 0;
+}
+
+
 /** used below in fuse_main() to define the entry points for a FUSE filesystem; this is the same VMT-like jump table used throughout the UNIX kernel. */
 static struct fuse_operations mysqlfs_oper = {
     .getattr	= mysqlfs_getattr,
@@ -627,6 +672,7 @@ static struct fuse_operations mysqlfs_oper = {
     .readlink	= mysqlfs_readlink,
     .rename	= mysqlfs_rename,
     .create	= mysqlfs_create,
+    .statfs     = mysqlfs_statfs,
 };
 
 /** print out a brief usage aide-memoire to stderr */

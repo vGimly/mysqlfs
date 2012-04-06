@@ -1466,3 +1466,106 @@ int query_fsck(MYSQL *mysql)
     return ret;
 
 }
+
+
+
+/** Statistical functions **/
+
+/**
+ * Return total inodes number
+ *
+ * @return total inode numers
+ * @param mysql handle to connection to the database
+ */
+long query_total_inodes(MYSQL *mysql)
+{
+    size_t ret;
+    char sql[SQL_MAX];
+    MYSQL_RES *result;
+    MYSQL_ROW row;
+
+    snprintf(sql, SQL_MAX, "SELECT COUNT(*) FROM inodes");
+
+    ret = mysql_query(mysql, sql);
+    if(ret){
+        log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
+        return -EIO;
+    }
+    log_printf(LOG_D_SQL, "sql=%s\n", sql);
+
+    result = mysql_store_result(mysql);
+    if(!result){
+        log_printf(LOG_ERROR, "ERROR: mysql_store_result()\n");
+        log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
+        return -EIO;
+    }
+
+    if(mysql_num_rows(result) != 1 || mysql_num_fields(result) != 1){
+        mysql_free_result(result);
+        return -EIO;
+    }
+
+    row = mysql_fetch_row(result);
+    if(!row){
+        return -EIO;
+    }
+
+    if(row[0]){
+        ret = atol(row[0]);
+    }else{
+        ret = 0;
+    }
+    mysql_free_result(result);
+
+    return ret;
+}
+
+/**
+ * Return total data blocks
+ *
+ * @return total data blocks
+ * @param mysql handle to connection to the database
+ */
+long query_total_blocks(MYSQL *mysql)
+{
+    size_t ret;
+    char sql[SQL_MAX];
+    MYSQL_RES *result;
+    MYSQL_ROW row;
+
+    snprintf(sql, SQL_MAX, "SELECT COUNT(*) FROM data_blocks");
+
+    ret = mysql_query(mysql, sql);
+    if(ret){
+        log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
+        return -EIO;
+    }
+    log_printf(LOG_D_SQL, "sql=%s\n", sql);
+
+    result = mysql_store_result(mysql);
+    if(!result){
+        log_printf(LOG_ERROR, "ERROR: mysql_store_result()\n");
+        log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
+        return -EIO;
+    }
+
+    if(mysql_num_rows(result) != 1 || mysql_num_fields(result) != 1){
+        mysql_free_result(result);
+        return -EIO;
+    }
+
+    row = mysql_fetch_row(result);
+    if(!row){
+        return -EIO;
+    }
+
+    if(row[0]){
+        ret = atol(row[0]);
+    }else{
+        ret = 0;
+    }
+    mysql_free_result(result);
+
+    return ret;
+}
+
