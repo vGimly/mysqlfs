@@ -1483,6 +1483,7 @@ unsigned long query_total_inodes(MYSQL *mysql)
     char sql[SQL_MAX];
     MYSQL_RES *result;
     MYSQL_ROW row;
+    unsigned long inodes;
 
     snprintf(sql, SQL_MAX, "SELECT COUNT(*) FROM inodes");
 
@@ -1511,14 +1512,13 @@ unsigned long query_total_inodes(MYSQL *mysql)
     }
 
     if(row[0]){
-        ret = strtoul(row[0]);
-	log_printf(LOG_ERROR, "Total inodes: %lu\n", ret);
+	inodes = (unsigned long)atol(row[0]);
     }else{
-        ret = 0;
+        inodes = 0;
     }
     mysql_free_result(result);
 
-    return ret;
+    return inodes;
 }
 
 /**
@@ -1533,6 +1533,7 @@ unsigned long query_total_blocks(MYSQL *mysql)
     char sql[SQL_MAX];
     MYSQL_RES *result;
     MYSQL_ROW row;
+    unsigned long blocks;
 
     snprintf(sql, SQL_MAX, "SELECT COUNT(*) FROM data_blocks");
 
@@ -1561,12 +1562,12 @@ unsigned long query_total_blocks(MYSQL *mysql)
     }
 
     if(row[0]){
-        ret = strtoul(row[0]);
+        blocks = (unsigned long)atol(row[0]);
     }else{
-        ret = 0;
+        blocks = 0;
     }
     mysql_free_result(result);
 
-    return ret;
+    return blocks;
 }
 
