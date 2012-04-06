@@ -1513,6 +1513,7 @@ unsigned long query_total_inodes(MYSQL *mysql)
 
     if(row[0]){
 	inodes = (unsigned long)atol(row[0]);
+        log_printf(LOG_ERROR, "Total inodes: %ul\n", inodes);
     }else{
         inodes = 0;
     }
@@ -1563,6 +1564,7 @@ unsigned long query_total_blocks(MYSQL *mysql)
 
     if(row[0]){
         blocks = (unsigned long)atol(row[0]);
+        log_printf(LOG_ERROR, "Total blocks: %ul\n", blocks);
     }else{
         blocks = 0;
     }
