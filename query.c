@@ -1536,7 +1536,7 @@ fsblkcnt_t query_total_blocks(MYSQL *mysql)
     MYSQL_ROW row;
     fsblkcnt_t blocks;
 
-    snprintf(sql, SQL_MAX, "SELECT COUNT(*) FROM data_blocks");
+    snprintf(sql, SQL_MAX, "SELECT CEIL(SUM(size)/%d) from inodes", DATA_BLOCK_SIZE);
 
     ret = mysql_query(mysql, sql);
     if(ret){
