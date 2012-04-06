@@ -305,7 +305,7 @@ long seek_inode(MYSQL *mysql, const char *path, const long *parent_id)
 	RIGHT_PART[0] = '\0';
   }
 
-  if (parent_ID == NULL)
+  if (parent_id == NULL)
   {
     snprintf(sql, SQL_MAX, "SELECT inode FROM tree WHERE parent IS NULL");
   }
