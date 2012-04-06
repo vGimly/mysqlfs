@@ -1,3 +1,20 @@
+What is new in 0.4.1
+--------------------
+
+* Switched DB engine from MyISAM to InnoDB
+
+* Basic Transaction support (with Rollback in case of emergency)
+
+* Upgrade to FUSE API 2.6 - implementing new functions to fully
+  support FUSE operations
+
+* Support for "big_writes" to speed up filesystem operations (a lot!)
+
+* Support for FreeBSD (FUSE4BSD) out of the box
+
+* Support for File System statistics (used space, used inodes,
+  and some fake-free space and fake-free inodes)
+
 What is new in 0.4.0
 --------------------
 

@@ -18,6 +18,8 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
 
 * Usage
 
+  If you are UPGRADING from a previous version of mysqlfs please see below!
+
 1. Create database and account
    mysql> CREATE DATABASE mysqlfs;
    mysql> GRANT SELECT, INSERT, UPDATE, DELETE ON mysqlfs.* TO mysqlfs@"%" IDENTIFIED BY 'password';
@@ -26,7 +28,7 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
    (note FAQ: Errors #1 "Access Denied For User" below)
 
 2. Create tables
-   $ mysql -uroot -p mysqlfs < schema.sql
+   $ mysql -uroot -p mysqlfs < sql/schema.sql
 
    (note FAQ: Errors #2 "Can't Create/Write to File" below)
 
@@ -37,6 +39,31 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
 4. Instead of setting connection options on the command line
    you may create a [mysqlfs] section in your ~/.my.cnf file and
    set the parameters there.
+
+* Upgrading
+
+   To upgrade your existing installation you have to make some changes to the database.
+
+1. Recompile mysqlfs 0.4.1 (see the "Build" chapter)
+  
+2. Stop your currently running mysqlfs. If you have multiple istances in a replicated cluster
+   please STOP THEM ALL.
+ 
+3. Backup your datas
+
+   $ mysqldump --opt -uroot -p mysqlfs > mybackup.sql
+
+4. Upgrade the database
+
+   (did you backup your datas?)
+
+   $ mysql -uroot -p mysqlfs < sql/0.4.0_to_0.4.1.sql
+
+5. Start new version of mysqlfs adapting your command line to enable big_writes (-obig_writes)
+
+6. Check that everything is in place
+
+   Newly saved files will start to use larger blocks. 4k-base files will stay 4k unless they get rewritten/overwritten.
 
 * Options
 
@@ -51,6 +78,9 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
 
   -odatabase=<db>
     MySQL database name
+
+  -obig_writes
+    Enable big_writes (strongly suggested)
 
 * FAQ: ERRORS
 
@@ -92,3 +122,4 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
 
 Copyright (C) 2006 Tsukasa Hamano <code@cuspy.org>
 Copyright (C) 2006 Michal Ludvig <michal@logix.cz>
+Copyright (C) 2012 Andrea Brancatelli <andrea@brancatelli.it>
