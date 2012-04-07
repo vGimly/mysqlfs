@@ -263,6 +263,120 @@ long query_inode(MYSQL *mysql, const char *path)
 }
 
 /**
+ * New Query Inode function. Recursively checks for a path in the tree table
+ * and returns it's ID.
+ *
+ * See the note in slow_query_inode(): this will be trashed soon as it proved out being
+ * slower than the original implementation
+ *
+ * @return ID of inode
+ * @return < 0 in case of failure (see query_inode_full)
+ * @param mysql handle to db connection
+ * @param path full pathname of inode to find
+ */
+
+long seek_inode(MYSQL *mysql, const char *path, const long *parent_id)
+{
+
+  char LEFT_PART[255];
+  char RIGHT_PART[255];
+  char *breaking_point;
+
+  long id;
+  long ret;
+
+  char sql[SQL_MAX];
+  long mysql_h;
+  MYSQL_RES* result;
+  MYSQL_ROW  row;
+
+  /* OK, let's see where's the first Slash... */
+  breaking_point = strchr(path, '/');
+
+  if (breaking_point != NULL)
+  {
+	/* There probably is something else after... */
+  	int len = breaking_point - path;
+	strncpy(LEFT_PART, path, len);
+	LEFT_PART[len] = '\0';
+	strcpy(RIGHT_PART, breaking_point + 1);
+  }
+  else
+  {
+	/* Ok the path is over everybody go home */
+	strcpy(LEFT_PART, path);
+	RIGHT_PART[0] = '\0';
+  }
+
+  if (parent_id == NULL)
+  {
+    snprintf(sql, SQL_MAX, "SELECT inode FROM tree WHERE parent IS NULL");
+  }
+  else
+  {
+    snprintf(sql, SQL_MAX, "SELECT inode FROM tree WHERE name = '%s' AND parent = %ld", LEFT_PART, parent_id);
+  }
+
+  log_printf(LOG_D_SQL, "sql=%s\n", sql);
+  mysql_h = mysql_query(mysql, sql);
+  if(mysql_h){
+      log_printf(LOG_ERROR, "ERROR: mysql_query()\n");
+      log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
+      return -EIO;
+  }
+
+  result = mysql_store_result(mysql);
+  if(!result){
+      log_printf(LOG_ERROR, "ERROR: mysql_store_result()\n");
+      log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
+      return -EIO;
+  }
+
+  if(mysql_num_rows(result) != 1){
+      mysql_free_result(result);
+      return -ENOENT;
+  }
+
+  row = mysql_fetch_row(result);
+  if(!row){
+      log_printf(LOG_ERROR, "ERROR: mysql_fetch_row()\n");
+      return -EIO;
+  }
+
+  id = atol(row[0]);
+
+  if (strlen(RIGHT_PART) > 0 )
+  {
+     ret = seek_inode(mysql, RIGHT_PART, id);
+  }
+  else
+  {
+     ret = id;
+  }
+
+  return ret;
+
+}
+
+/**
+ * This (+ seek_inode) was an attempt of changing the way query_inode was working
+ *
+ * It's working, but it seems to be slower than the standard old implementation
+ *
+ * I'll keep them here for a while, but they will be probably dumped soon.
+ *
+ */ 
+
+long slow_query_inode(MYSQL *mysql, const char *path)
+{
+
+  return seek_inode(mysql, path, NULL);
+
+}
+
+
+
+/**
  * Change the length of a file, truncating any additional data blocks and
  * immediately deleting the data blocks past the truncation length.  Function
  * works by deleting whole blocks past the truncation point, limiting the
@@ -1352,3 +1466,110 @@ int query_fsck(MYSQL *mysql)
     return ret;
 
 }
+
+
+
+/** Statistical functions **/
+
+/**
+ * Return total inodes number
+ *
+ * @return total inode numers
+ * @param mysql handle to connection to the database
+ */
+fsfilcnt_t query_total_inodes(MYSQL *mysql)
+{
+    size_t ret;
+    char sql[SQL_MAX];
+    MYSQL_RES *result;
+    MYSQL_ROW row;
+    fsfilcnt_t inodes;
+
+    snprintf(sql, SQL_MAX, "SELECT COUNT(*) FROM inodes");
+
+    ret = mysql_query(mysql, sql);
+    if(ret){
+        log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
+        return -EIO;
+    }
+    log_printf(LOG_D_SQL, "sql=%s\n", sql);
+
+    result = mysql_store_result(mysql);
+    if(!result){
+        log_printf(LOG_ERROR, "ERROR: mysql_store_result()\n");
+        log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
+        return -EIO;
+    }
+
+    if(mysql_num_rows(result) != 1 || mysql_num_fields(result) != 1){
+        mysql_free_result(result);
+        return -EIO;
+    }
+
+    row = mysql_fetch_row(result);
+    if(!row){
+        return -EIO;
+    }
+
+    if(row[0]){
+	inodes = (fsfilcnt_t)atol(row[0]);
+        log_printf(LOG_ERROR, "Total inodes: %u\n", inodes);
+    }else{
+        inodes = 0;
+    }
+    mysql_free_result(result);
+
+    return inodes;
+}
+
+/**
+ * Return total data blocks
+ *
+ * @return total data blocks
+ * @param mysql handle to connection to the database
+ */
+fsblkcnt_t query_total_blocks(MYSQL *mysql)
+{
+    size_t ret;
+    char sql[SQL_MAX];
+    MYSQL_RES *result;
+    MYSQL_ROW row;
+    fsblkcnt_t blocks;
+
+    snprintf(sql, SQL_MAX, "SELECT CEIL(SUM(size)/%d) from inodes", DATA_BLOCK_SIZE);
+
+    ret = mysql_query(mysql, sql);
+    if(ret){
+        log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
+        return -EIO;
+    }
+    log_printf(LOG_D_SQL, "sql=%s\n", sql);
+
+    result = mysql_store_result(mysql);
+    if(!result){
+        log_printf(LOG_ERROR, "ERROR: mysql_store_result()\n");
+        log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
+        return -EIO;
+    }
+
+    if(mysql_num_rows(result) != 1 || mysql_num_fields(result) != 1){
+        mysql_free_result(result);
+        return -EIO;
+    }
+
+    row = mysql_fetch_row(result);
+    if(!row){
+        return -EIO;
+    }
+
+    if(row[0]){
+        blocks = (fsblkcnt_t)atol(row[0]);
+        log_printf(LOG_ERROR, "Total blocks: %u\n", blocks);
+    }else{
+        blocks = 0;
+    }
+    mysql_free_result(result);
+
+    return blocks;
+}
+

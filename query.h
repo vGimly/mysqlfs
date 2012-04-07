@@ -56,3 +56,6 @@ int query_set_deleted(MYSQL *mysql, long inode);
 int query_purge_deleted(MYSQL *mysql, long inode);
 
 int query_fsck(MYSQL *mysql);
+
+fsfilcnt_t query_total_inodes(MYSQL *mysql);
+fsblkcnt_t query_total_blocks(MYSQL *mysql);

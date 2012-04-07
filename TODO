@@ -2,6 +2,8 @@
 
 * Implement correct command line parsing to activate big-writes (currently broken)
 
+* Implement new 2.6 API FUSE functions
+
 * Implement more robust connection pool
 	- avoid -EMFILE when there are no more free connections
 
@@ -16,3 +18,4 @@
 
 * Implement support for xattr and acl
 	- FUSE has the methods at least for xattr
+

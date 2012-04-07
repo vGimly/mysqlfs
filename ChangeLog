@@ -1,3 +1,11 @@
+2012-04-06  Andrea Brancatelli <andrea@brancatelli.it>
+	* The FileSystem now reports some pseudorealistic
+	  information about space usage and real informations
+	  about inode usage.
+	* Implemented the mysqlfs_create() to support new (2.6)
+	  fuse::create 
+	* Updated version to 0.4.1
+
 2012-04-04  Andrea Brancatelli <andrea@brancatelli.it>
         * Added support for big-writes
         * Added support for FreeBSD build
