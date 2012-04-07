@@ -740,13 +740,13 @@ static struct fuse_opt mysqlfs_opts[] =
     MYSQLFS_OPT_KEY("--user=%s",	user,	0),
     MYSQLFS_OPT_KEY( "-u %s",		user,	0),
 
-    FUSE_OPT_KEY("debug-dnq",	  KEY_DEBUG_DNQ),
-    FUSE_OPT_KEY("noprivate",     KEY_NOPRIVATE),
-    FUSE_OPT_KEY("nopermissions", KEY_NOPERMISSIONS),
-    FUSE_OPT_KEY("big_writes",    KEY_BIGWRITES),
-    FUSE_OPT_KEY("-v",		  KEY_VERSION),
-    FUSE_OPT_KEY("--version",	  KEY_VERSION),
-    FUSE_OPT_KEY("--help",	  KEY_HELP),
+    FUSE_OPT_KEY("debug-dnq",	        KEY_DEBUG_DNQ),
+    FUSE_OPT_KEY("allow_other",         KEY_NOPRIVATE),
+    FUSE_OPT_KEY("default_permissions", KEY_NOPERMISSIONS),
+    FUSE_OPT_KEY("big_writes",          KEY_BIGWRITES),
+    FUSE_OPT_KEY("-v",		        KEY_VERSION),
+    FUSE_OPT_KEY("--version",	        KEY_VERSION),
+    FUSE_OPT_KEY("--help",	        KEY_HELP),
     FUSE_OPT_END
   };
 
