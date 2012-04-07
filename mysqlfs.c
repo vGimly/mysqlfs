@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -67,6 +68,7 @@ static int mysqlfs_getattr(const char *path, struct stat *stbuf)
         }
 
         stbuf->st_size = query_size(dbconn, inode);
+	stbuf->st_blocks = (blkcnt_t)ceill(stbuf->st_size / 512);
     }
 
     pool_put(dbconn);

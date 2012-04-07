@@ -1513,7 +1513,6 @@ fsfilcnt_t query_total_inodes(MYSQL *mysql)
 
     if(row[0]){
 	inodes = (fsfilcnt_t)atol(row[0]);
-        log_printf(LOG_ERROR, "Total inodes: %u\n", inodes);
     }else{
         inodes = 0;
     }
@@ -1564,7 +1563,6 @@ fsblkcnt_t query_total_blocks(MYSQL *mysql)
 
     if(row[0]){
         blocks = (fsblkcnt_t)atol(row[0]);
-        log_printf(LOG_ERROR, "Total blocks: %u\n", blocks);
     }else{
         blocks = 0;
     }
