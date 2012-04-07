@@ -1,9 +1,15 @@
 ##
-## This scripts comes without ANY warranty of any kind.
-## PLEASE BACKUP YOUR DATAS FIRST
+## This scripts is NOT meant to be run on a working database
 ##
-## This is the upgrade script from MySQLfs 0.4.0 to 0.4.1
+## IT IS AN INFORMATIVE SCRIPT ONLY
 ##
+## TO UPGRADE A RUNNING 0.4.0 FILESYSTEM TO A 0.4.1 ONE PLEASE
+## CREATE A NEW MYSQLFS INSTANCE AND COPY THE DATAS FROM
+## THE OLD ONE TO THE NEW ONE. PLEASE SEE THE README
+## FOR INSTRUCTIONS ON THIS
+##
+
+DONTRUNME;
 
 alter table `data_blocks` modify column `data` longblob;
 

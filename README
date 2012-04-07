@@ -2,13 +2,13 @@
 
 MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
 
-* Requirements
+===> Requirements
 
   - mysql-client libraries 5.0 or later
   - mysql-server 5.0 or later
   - fuse 2.6 or later
 
-* Build
+===> Build
 
   If compiling from version-control, use "autoreconf -vfi" first.
 
@@ -16,7 +16,7 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
   $ ./configure
   $ make
 
-* Usage
+===> Usage
 
   If you are UPGRADING from a previous version of mysqlfs please see below!
 
@@ -40,32 +40,25 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
    you may create a [mysqlfs] section in your ~/.my.cnf file and
    set the parameters there.
 
-* Upgrading
+===> Upgrading
 
-   To upgrade your existing installation you have to make some changes to the database.
+   To upgrade your existing installation unfortunately you have to make some changes
+   to the database.
 
-1. Recompile mysqlfs 0.4.1 (see the "Build" chapter)
-  
-2. Stop your currently running mysqlfs. If you have multiple istances in a replicated cluster
-   please STOP THEM ALL.
- 
-3. Backup your datas
+   The recomended solution to upgrade your system is to compile mysqlfs 0.4.1 and
+   create a NEW filesystem in a NEW database. Mount it alongside the old one and then
+   just copy datas from the old filesystem to the new one. THIS IS THE RECOMENDED
+   (AND PROBABILY THE ONLY CERTAIN) SOLUTION.
 
-   $ mysqldump --opt -uroot -p mysqlfs > mybackup.sql
+   IN THE SQL DIR YOU CAN FIND A 0.4.0_to_0.4.1.sql FILE, BUT IT IS INFORMATIVE
+   ONLY - IT'S NOT MEANT TO BE RUN ON A RUNNING FILESYSTEM
 
-4. Upgrade the database
+   The problem lies in the handling of "sparse files": increasing the blocksize
+   without proper remapping of the underlying database can cause improper results.
+   More specifically your files will probably get filled with zeroes. You probably
+   don't want that.
 
-   (did you backup your datas?)
-
-   $ mysql -uroot -p mysqlfs < sql/0.4.0_to_0.4.1.sql
-
-5. Start new version of mysqlfs adapting your command line to enable big_writes (-obig_writes)
-
-6. Check that everything is in place
-
-   Newly saved files will start to use larger blocks. 4k-base files will stay 4k unless they get rewritten/overwritten.
-
-* Options
+===> Options
 
   -ohost=<hostname>
     MySQL server host
@@ -82,7 +75,7 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
   -obig_writes
     Enable big_writes (strongly suggested)
 
-* FAQ: ERRORS
+===> FAQ: ERRORS
 
 1. Access Denied For User 'mysql'@'localhost'
 
@@ -119,6 +112,7 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
    The grant/flush commands worked fine after that.  In my usage, I'm "sudo" which can affect the output, so the
    error might have been mine alone.  I'm commenting here in case someone else sees it.
 
+===> Authors
 
 Copyright (C) 2006 Tsukasa Hamano <code@cuspy.org>
 Copyright (C) 2006 Michal Ludvig <michal@logix.cz>
