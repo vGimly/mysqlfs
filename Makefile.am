@@ -1,8 +1,8 @@
 # $Id: Makefile.am,v 1.4 2006/10/02 22:34:03 ludvigm Exp $
 
 bin_PROGRAMS = mysqlfs
-schema_DATA = schema.sql install.sql
-schemadir = $(datadir)/$(distdir)
+schema_DATA = sql/schema.sql sql/install.sql
+schemadir = $(datadir)/$(distdir)/sql
 
 # because the source is not in a subdir, we cannot just put the tests in a SUBDIRS= :(
 check-recursive : mysqlfs
