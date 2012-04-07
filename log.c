@@ -78,7 +78,7 @@ FILE *log_init(const char *filename, int verbose)
     }
 
 	if (verbose)
-		printf("* Opening logfile '%s': ", filename);
+		printf(" * Opening logfile '%s': ", filename);
 
 
 	if ((f = fopen(filename, "a+")) == NULL)

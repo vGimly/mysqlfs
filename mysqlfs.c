@@ -792,7 +792,7 @@ static int mysqlfs_opt_proc(void *data, const char *arg, int key, struct fuse_ar
 	    exit (0);
             
         case KEY_NOPRIVATE:
-	    fprintf(stderr, " * File system will be shared (check fuse.conf to see who can access it)\n");
+	    fprintf(stderr, " * File system will be shared (check fuse.conf to confirm this!)\n");
             fuse_opt_add_arg(outargs, "-oallow_other");
             break;
                 
@@ -834,7 +834,7 @@ int main(int argc, char *argv[])
 
     log_file = stderr;
 
-    fprintf (stderr, "%s version %s startup. Using fuse-%2.1f\n\n", PACKAGE_TARNAME, PACKAGE_VERSION, ((double) FUSE_USE_VERSION)/10.0);
+    fprintf (stderr, "\n%s version %s startup. Using fuse-%2.1f\n\n", PACKAGE_TARNAME, PACKAGE_VERSION, ((double) FUSE_USE_VERSION)/10.0);
 
     #if (defined(BSD) && (BSD >= 199306))
 	fprint(stderr, "When using FreeBSD please make sure to use the -odefault_permissions parameter");
@@ -862,6 +862,8 @@ int main(int argc, char *argv[])
     }
 
     log_file = log_init(opt.logfile, 1);
+
+    fprintf(stderr, "\nCommand line parsing finished, starting FUSE...\n");
 
     fuse_main(args.argc, args.argv, &mysqlfs_oper, NULL);
     fuse_opt_free_args(&args);
