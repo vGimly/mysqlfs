@@ -786,7 +786,10 @@ static int mysqlfs_opt_proc(void *data, const char *arg, int key,
 	    exit (0);
             
         case KEY_BIGWRITES:
+		#ifdef FUSE_CAP_BIG_WRITES
+		fprintf(stderr, "Enabling big writes");
                 fuse_opt_add_arg(outargs, "-obig_writes");
+		#endif
                 break;
                 
         default: /* key != FUSE_OPT_KEY_OPT */
