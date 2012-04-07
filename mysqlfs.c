@@ -588,7 +588,7 @@ static int mysqlfs_create(const char *path, mode_t mode, struct fuse_file_info *
 
    rdev = S_IFREG;
 
-   log_printf(LOG_ERROR, "path %s mode %o \n", path, mode);
+   log_printf(LOG_D_CALL, "Creating path %s mode %o \n", path, mode);
 
    ret = mysqlfs_mknod(path, mode, rdev);
    if(ret<0){
@@ -748,8 +748,9 @@ static struct fuse_opt mysqlfs_opts[] =
 
 
 
-static int mysqlfs_opt_proc(void *data, const char *arg, int key,
-                            struct fuse_args *outargs){
+static int mysqlfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs)
+{
+
     struct mysqlfs_opt *opt = (struct mysqlfs_opt *) data;
 
     switch (key)
@@ -758,6 +759,7 @@ static int mysqlfs_opt_proc(void *data, const char *arg, int key,
     /*
      * There are primitives for this in FUSE, but no need to change at this point
      */
+	    fprintf(stderr, "Ignoring option %s", arg);
             break;
 
         case KEY_DEBUG_DNQ:
@@ -786,18 +788,19 @@ static int mysqlfs_opt_proc(void *data, const char *arg, int key,
 	    exit (0);
             
         case KEY_BIGWRITES:
-		#ifdef FUSE_CAP_BIG_WRITES
-		fprintf(stderr, "Enabling big writes\n");
-                fuse_opt_add_arg(outargs, "-o-obig_writes");
-		#endif
-                break;
+	    #ifdef FUSE_CAP_BIG_WRITES
+	       fprintf(stderr, "Enabling big writes...\n");
+               fuse_opt_add_arg(outargs, "-obig_writes");
+	    #endif
+            break;
                 
         default: /* key != FUSE_OPT_KEY_OPT */
             fuse_opt_add_arg(outargs, arg);
             return 0;
     }
 
-    fuse_opt_add_arg(outargs, arg);
+    /* Why? */
+    // fuse_opt_add_arg(outargs, arg);
     return 0;
 }
 
