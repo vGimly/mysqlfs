@@ -1,4 +1,6 @@
-* Implement correct command line parsing to activate big-writes
+* SELECT t0.inode, t0.name, t0.parent,        (SELECT COUNT(inode) FROM tree AS t1 WHERE t1.inode=t0.inode)                AS nlinks FROM tree AS t0 WHERE t0.parent IS NULL
+
+* Implement correct command line parsing to activate big-writes (currently broken)
 
 * Implement more robust connection pool
 	- avoid -EMFILE when there are no more free connections
