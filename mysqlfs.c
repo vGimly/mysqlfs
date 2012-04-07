@@ -680,19 +680,19 @@ void usage(){
     fprintf(stderr,
             "usage: mysqlfs [opts] <mountpoint>\n\n");
     fprintf(stderr,
-            "       mysqlfs [-osocket=/tmp/mysql.sock] [-obig_writes] [-oport=####] -ohost=host -ouser=user -opassword=password "
+            "       mysqlfs [-osocket=/tmp/mysql.sock] [-obig_writes] [-oallow_other] [-odefault_permissions] [-oport=####] -ohost=host -ouser=user -opassword=password "
             "-odatabase=database ./mountpoint\n");
     fprintf(stderr,
-            "       mysqlfs [-d] [-ologfile=filename] [-obig_writes] -ohost=host -ouser=user -opassword=password "
+            "       mysqlfs [-d] [-ologfile=filename] [-obig_writes] [-oallow_other] [-odefault_permissions] -ohost=host -ouser=user -opassword=password "
             "-odatabase=database ./mountpoint\n");
     fprintf(stderr,
-            "       mysqlfs [-mycnf_group=group_name] [-obig_writes] -ohost=host -ouser=user -opassword=password "
+            "       mysqlfs [-mycnf_group=group_name] [-obig_writes] [-oallow_other] [-odefault_permissions] -ohost=host -ouser=user -opassword=password "
             "-odatabase=database ./mountpoint\n");
     fprintf(stderr, "\n(mimick mysql options)\n");
     fprintf(stderr,
-            "       mysqlfs [-obig_writes] --host=host --user=user --password=password --database=database ./mountpoint\n");
+            "       mysqlfs [-obig_writes] [-oallow_other] [-odefault_permissions] --host=host --user=user --password=password --database=database ./mountpoint\n");
     fprintf(stderr,
-            "       mysqlfs [-obig_writes] -h host -u user --password=password -D database ./mountpoint\n");
+            "       mysqlfs [-obig_writes] [-oallow_other] [-odefault_permissions] -h host -u user --password=password -D database ./mountpoint\n");
 }
 
 /** macro to set a call value with a default -- defined yet? */
@@ -706,6 +706,8 @@ enum
     KEY_HELP,
     KEY_VERSION,
     KEY_BIGWRITES,
+    KEY_NOPRIVATE,
+    KEY_NOPERMISSIONS,
   };
 
 /** fuse_opt for use with fuse_opt_parse() */
@@ -738,11 +740,13 @@ static struct fuse_opt mysqlfs_opts[] =
     MYSQLFS_OPT_KEY("--user=%s",	user,	0),
     MYSQLFS_OPT_KEY( "-u %s",		user,	0),
 
-    FUSE_OPT_KEY("debug-dnq",	KEY_DEBUG_DNQ),
-    FUSE_OPT_KEY("big_writes",  KEY_BIGWRITES),
-    FUSE_OPT_KEY("-v",		KEY_VERSION),
-    FUSE_OPT_KEY("--version",	KEY_VERSION),
-    FUSE_OPT_KEY("--help",	KEY_HELP),
+    FUSE_OPT_KEY("debug-dnq",	  KEY_DEBUG_DNQ),
+    FUSE_OPT_KEY("noprivate",     KEY_NOPRIVATE),
+    FUSE_OPT_KEY("nopermissions", KEY_NOPERMISSIONS),
+    FUSE_OPT_KEY("big_writes",    KEY_BIGWRITES),
+    FUSE_OPT_KEY("-v",		  KEY_VERSION),
+    FUSE_OPT_KEY("--version",	  KEY_VERSION),
+    FUSE_OPT_KEY("--help",	  KEY_HELP),
     FUSE_OPT_END
   };
 
@@ -787,9 +791,22 @@ static int mysqlfs_opt_proc(void *data, const char *arg, int key, struct fuse_ar
 	    fprintf (stderr, "%s-%s fuse-%2.1f\n\n", PACKAGE_TARNAME, PACKAGE_VERSION, ((double) FUSE_USE_VERSION)/10.0);
 	    exit (0);
             
+        case KEY_NOPRIVATE:
+	    fprintf(stderr, " * File system will be shared (check fuse.conf to see who can access it)\n");
+            fuse_opt_add_arg(outargs, "-oallow_other");
+            break;
+                
+        case KEY_NOPERMISSIONS:
+	    fprintf(stderr, " * Using default permissions\n");
+            fuse_opt_add_arg(outargs, "-odefault_permissions");
+            break;
+                
         case KEY_BIGWRITES:
+	    #if (defined(BSD) && (BSD >= 199306))
+	       fprintf(stderr, " * Please note that FreeBSD didn't support big_writes\n   when this code was written.\n   Trying to enable it anyhow.\n   If you see 'Enabling big writes...' it should work :-)\n");
+	    #endif
 	    #ifdef FUSE_CAP_BIG_WRITES
-	       fprintf(stderr, "Enabling big writes...\n");
+	       fprintf(stderr, " * Enabling big writes...\n");
                fuse_opt_add_arg(outargs, "-obig_writes");
 	    #endif
             break;
@@ -799,8 +816,6 @@ static int mysqlfs_opt_proc(void *data, const char *arg, int key, struct fuse_ar
             return 0;
     }
 
-    /* Why? */
-    // fuse_opt_add_arg(outargs, arg);
     return 0;
 }
 
@@ -818,6 +833,12 @@ int main(int argc, char *argv[])
     };
 
     log_file = stderr;
+
+    fprintf (stderr, "%s version %s startup. Using fuse-%2.1f\n\n", PACKAGE_TARNAME, PACKAGE_VERSION, ((double) FUSE_USE_VERSION)/10.0);
+
+    #if (defined(BSD) && (BSD >= 199306))
+	fprint(stderr, "When using FreeBSD please make sure to use the -odefault_permissions parameter");
+    #endif
 
     fuse_opt_parse(&args, &opt, mysqlfs_opts, mysqlfs_opt_proc);
 
