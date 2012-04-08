@@ -224,6 +224,11 @@ static int mysqlfs_unlink(const char *path)
     if (nlinks > 1)
         return 0;
     
+    /* Due to the introduction of InnoDB referencial integrity
+     * (and cascading), this should be totaly useless,
+     * But let's keep it here for a while. */
+    /* Useless_Start... */
+
     ret = query_set_deleted(dbconn, inode);
     if (ret < 0) {
         log_printf(LOG_ERROR, "Error: query_set_deleted()\n");
@@ -235,6 +240,8 @@ static int mysqlfs_unlink(const char *path)
         log_printf(LOG_ERROR, "Error: query_purge_deleted()\n");
 	goto err_out;
     }
+
+    /* ...Useless_End */
 
     pool_put(dbconn);
 
