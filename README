@@ -8,6 +8,16 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
   - mysql-server 5.0 or later
   - fuse 2.6 or later
 
+===> Compatibility
+
+  During development mysqlfs is checked against:
+
+  * FreeBSD 9
+  * Fedora Linux 15
+  * Debian Linux 6
+
+  And against MySQL 5.1 (mainly Linux) and MySQL 5.5 (mainly FreeBSD).
+
 ===> Build
 
   If compiling from version-control, use "autoreconf -vfi" first.
@@ -73,7 +83,15 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
     MySQL database name
 
   -obig_writes
-    Enable big_writes (strongly suggested)
+    Enable big_writes (strongly suggested) - works only under Linux
+
+  -oallow_other
+    Enable filesystem access to different users than the one who mounted it.
+    The corresponding option must be enabled in /etc/fuse.conf
+
+  -odefault_permissions
+    Disable some extended permission checkings on files. Seems mandatory on
+    FreeBSD!
 
 ===> FAQ: ERRORS
 

@@ -1,3 +1,14 @@
+2012-04-08  Andrea Brancatelli <andrea@brancatelli.it>
+	* The FileSystem is now du-compatible when
+	  reporting file size
+	* Corrected a bug in command line parsing
+	* Fixed problem with -obig_writes
+	* Enabled support for -oallow_other to allow multiple
+	  users access to the same filesystem
+	* Enabled support for -odefault_permissions (that
+	  seems to be mandatory when using the FS under
+	  FreeBSD)
+
 2012-04-06  Andrea Brancatelli <andrea@brancatelli.it>
 	* The FileSystem now reports some pseudorealistic
 	  information about space usage and real informations
