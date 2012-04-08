@@ -20,10 +20,11 @@
 
 DROP TABLE IF EXISTS `data_blocks`;
 CREATE TABLE `data_blocks` (
-  `inode` bigint(20) NOT NULL,
+  `inode` bigint(20) unsigned NOT NULL,
   `seq` int(10) unsigned NOT NULL,
   `data` longblob,
-  PRIMARY KEY (`inode`,`seq`)
+  PRIMARY KEY (`inode`,`seq`),
+  CONSTRAINT `data_blocks_ibfk_1` FOREIGN KEY (`inode`) REFERENCES `inodes` (`inode`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=binary;
 
 --
@@ -32,7 +33,7 @@ CREATE TABLE `data_blocks` (
 
 DROP TABLE IF EXISTS `inodes`;
 CREATE TABLE `inodes` (
-  `inode` bigint(20) NOT NULL,
+  `inode` bigint(20) unsigned NOT NULL,
   `inuse` int(11) NOT NULL default '0',
   `deleted` tinyint(4) NOT NULL default '0',
   `mode` int(11) NOT NULL default '0',
@@ -43,16 +44,9 @@ CREATE TABLE `inodes` (
   `ctime` int(10) unsigned NOT NULL default '0',
   `size` bigint(20) NOT NULL default '0',
   PRIMARY KEY  (`inode`),
-  KEY `inode` (`inode`,`inuse`,`deleted`)
+  KEY `inode` (`inode`,`inuse`,`deleted`),
+  CONSTRAINT `inodes_ibfk_1` FOREIGN KEY (`inode`) REFERENCES `tree` (`inode`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=binary;
-
-/*!50003 SET @OLD_SQL_MODE=@@SQL_MODE*/;
-DELIMITER ;;
-/*!50003 SET SESSION SQL_MODE="" */;;
-/*!50003 CREATE */ /*!50003 TRIGGER `drop_data` AFTER DELETE ON `inodes` FOR EACH ROW BEGIN DELETE FROM data_blocks WHERE inode=OLD.inode; END */;;
-
-DELIMITER ;
-/*!50003 SET SESSION SQL_MODE=@OLD_SQL_MODE */;
 
 --
 -- Table structure for table `tree`
@@ -60,7 +54,7 @@ DELIMITER ;
 
 DROP TABLE IF EXISTS `tree`;
 CREATE TABLE `tree` (
-  `inode` int(10) unsigned NOT NULL auto_increment,
+  `inode` bigint(20) unsigned NOT NULL auto_increment,
   `parent` int(10) unsigned default NULL,
   `name` varchar(255) NOT NULL,
   UNIQUE KEY `name` (`name`,`parent`),

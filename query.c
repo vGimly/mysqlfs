@@ -864,6 +864,7 @@ static int write_one_block(MYSQL *mysql, long inode,
 {
     MYSQL_STMT *stmt;
     MYSQL_BIND bind[1];
+    unsigned int mysqlerrno;
     char sql[SQL_MAX];
     size_t current_block_size = query_size_block(mysql, inode, seq);
 
@@ -884,8 +885,9 @@ static int write_one_block(MYSQL *mysql, long inode,
                  "INSERT INTO data_blocks SET inode=%ld, seq=%lu, data=''", inode, seq);
         log_printf(LOG_D_SQL, "sql=%s\n", sql);
         if(mysql_query(mysql, sql)){
-            log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
-            return -EIO;
+		mysqlerrno = mysql_errno(mysql);
+		log_printf(LOG_ERROR, "WriteOneBlock EmptyBlock - mysql_error: %u %s\n", mysqlerrno, mysql_error(mysql));
+		return -EIO;
         }
 
 	/* If I just created the block then it must be zero */
@@ -895,7 +897,7 @@ static int write_one_block(MYSQL *mysql, long inode,
     stmt = mysql_stmt_init(mysql);
     if (!stmt)
     {
-        log_printf(LOG_ERROR, "mysql_stmt_init(), out of memory\n");
+        log_printf(LOG_ERROR, "WriteOneBlock - mysql_stmt_init(), out of memory\n");
 	return -EIO;
     }
 
@@ -957,7 +959,7 @@ static int write_one_block(MYSQL *mysql, long inode,
     }
     */
     if (mysql_stmt_execute(stmt)) {
-	log_printf(LOG_ERROR, "mysql_stmt_execute() failed: %s\n", mysql_stmt_error(stmt));
+	log_printf(LOG_ERROR, "WriteOneBlock - mysql_stmt_execute() failed: %u %s\n", mysql_stmt_errno(stmt), mysql_stmt_error(stmt));
 	goto err_out;
     }
 
@@ -992,6 +994,7 @@ int query_write(MYSQL *mysql, long inode, const char *data, size_t size,
 {
     struct data_blocks_info info;
     unsigned long seq;
+    unsigned int mysqlerrno;
     const char *ptr;
     char sql[SQL_MAX];
     int ret, commitret, ret_size = 0;
@@ -1044,18 +1047,21 @@ int query_write(MYSQL *mysql, long inode, const char *data, size_t size,
         ret_size += ret;
     }
 
+    /* Let's commit the transaction (and the size update...) */
+    commitret = mysql_query(mysql, "COMMIT");
+
     /* Update file size */
+    /* have to rewrite the deadlock handling logic... */
     snprintf(sql, SQL_MAX,
              "UPDATE inodes SET size = ( SELECT SUM(OCTET_LENGTH(data)) FROM data_blocks WHERE inode = %ld ) WHERE  inode = %ld",
              inode, inode);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     if(mysql_query(mysql, sql)) {
-        log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
+	mysqlerrno = mysql_errno(mysql);
+	log_printf(LOG_ERROR, "mysql_error: %u %s\n", mysqlerrno, mysql_error(mysql));
         return -EIO;
     }
 
-    /* Let's commit the transaction (and the size update...) */
-    commitret = mysql_query(mysql, "COMMIT");
     return ret_size;
 }
 

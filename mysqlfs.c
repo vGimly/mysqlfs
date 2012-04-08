@@ -844,6 +844,8 @@ int main(int argc, char *argv[])
 
     fuse_opt_parse(&args, &opt, mysqlfs_opts, mysqlfs_opt_proc);
 
+    fuse_opt_add_arg(&args, "-s");
+
     if (pool_init(&opt) < 0) {
         log_printf(LOG_ERROR, "Error: pool_init() failed\n");
         fuse_opt_free_args(&args);
