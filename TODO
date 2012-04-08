@@ -1,5 +1,4 @@
-
-* Implement correct command line parsing to activate big-writes (currently broken)
+* Fix the file deletion stuff
 
 * Implement new 2.6 API FUSE functions
 
