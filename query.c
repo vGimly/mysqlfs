@@ -1051,10 +1051,24 @@ int query_write(MYSQL *mysql, long inode, const char *data, size_t size,
     commitret = mysql_query(mysql, "COMMIT");
 
     /* Update file size */
-    /* have to rewrite the deadlock handling logic... */
+    /* This has to be changed to better interact with replication.
+	Specifically there's no need to run the update as select
+	on the slave nodes. The solution for this is to put the
+	result of the select into a variable and then use the variable
+	to update the value of the DB. Doing this the replication
+	will save the already computer value and the slave will run
+	a simple update. Furthermore I have some feelings that 
+	this will also avoid problems with non-deterministic
+	updates.... */
     snprintf(sql, SQL_MAX,
-             "UPDATE inodes SET size = ( SELECT SUM(OCTET_LENGTH(data)) FROM data_blocks WHERE inode = %ld ) WHERE  inode = %ld",
-             inode, inode);
+             "SELECT SUM(OCTET_LENGTH(data)) INTO @iNodeSize FROM data_blocks WHERE inode = %ld",
+             inode);
+    log_printf(LOG_D_SQL, "sql=%s\n", sql);
+    mysql_query(mysql, sql)
+
+    snprintf(sql, SQL_MAX,
+             "UPDATE inodes SET size = @iNodeSize WHERE inode = %ld",
+             inode);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     if(mysql_query(mysql, sql)) {
 	mysqlerrno = mysql_errno(mysql);
