@@ -1064,7 +1064,7 @@ int query_write(MYSQL *mysql, long inode, const char *data, size_t size,
              "SELECT SUM(OCTET_LENGTH(data)) INTO @iNodeSize FROM data_blocks WHERE inode = %ld",
              inode);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
-    mysql_query(mysql, sql)
+    mysql_query(mysql, sql);
 
     snprintf(sql, SQL_MAX,
              "UPDATE inodes SET size = @iNodeSize WHERE inode = %ld",
