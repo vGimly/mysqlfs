@@ -47,7 +47,7 @@ echo
 echo Checking for DATABASE_VERSION table
 TableExists=`echo "SHOW TABLES LIKE 'DATABASE_VERSION';" | mysql -N -h $DBHost -u $DBUser --password=$DBPass $DBName`
 
-if [ "$TableExists" != "DATABASE_VERSION" ];  then
+if [ "$TableExists" != "DATABASE_VERSION" ]; then
   echo "DATABASE_VERSION doesn't seem to exist in your database."
   echo If this is your first database upgrade ever this may be normal.
   echo PLEASE BE AWARE THAT THIS SCRIPT REQUIRE YOUR CURRENT MYSQLFS
