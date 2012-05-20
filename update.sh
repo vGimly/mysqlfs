@@ -61,8 +61,8 @@ if [ "$TableExists" != "DATABASE_VERSION" ]; then
     exit 1
   fi
 
-  echo Executing $DBUpdateScripts/0000000.sql
-  mysql -N -h $DBHost -u $DBUser --password=$DBPass $DBName < $DBUpdateScripts/0000000.sql > /tmp/dbupdate_stdout.log 2> /tmp/dbupdate_stderr.log
+  echo Executing $DBUpdateScripts/00000000.sql
+  mysql -N -h $DBHost -u $DBUser --password=$DBPass $DBName < $DBUpdateScripts/00000000.sql > /tmp/dbupdate_stdout.log 2> /tmp/dbupdate_stderr.log
   echo
 
 fi
