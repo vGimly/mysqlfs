@@ -87,12 +87,12 @@ while [ -f $DBUpdateScripts/$NextFile.sql ]; do
   mysql -N -h $DBHost -u $DBUser --password=$DBPass $DBName < $DBUpdateScripts/$NextFile.sql > /tmp/dbupdate_stdout.log 2> /tmp/dbupdate_stderr.log
   ErrorLevel=$?
   if [ $ErrorLevel -ne 0 ]; then
-   echo "Error applying update"
+   echo "Error applying update $NextDB"
    cat /tmp/dbupdate_stdout.log
    rm  /tmp/dbupdate_stdout.log
    cat /tmp/dbupdate_stderr.log
    rm  /tmp/dbupdate_stderr.log
-   break
+   exit 1
   else
    echo "INSERT INTO DATABASE_VERSION SET CURRENT_VERSION = $NextDB, LAST_CHANGE=NOW();" | mysql -N -h $DBHost -u $DBUser --password=$DBPass $DBName
    echo "Upgrading DATABASE_VERSION to $NextDB"
