@@ -45,7 +45,7 @@ fi
 
 echo 
 echo Checking for DATABASE_VERSION table
-TableExist=`echo "SHOW TABLES LIKE 'DATABASE_VERSION';" | mysql -N -h $DBHost -u $DBUser --password=$DBPass $DBName`
+TableExists=`echo "SHOW TABLES LIKE 'DATABASE_VERSION';" | mysql -N -h $DBHost -u $DBUser --password=$DBPass $DBName`
 
 if [ "$TableExists" != "DATABASE_VERSION" ]; then
   echo "DATABASE_VERSION doesn't seem to exist in your database."
