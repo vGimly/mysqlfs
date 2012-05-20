@@ -10,7 +10,7 @@
 ##
 ##
 
-DBUpdateScripts="sql/update"
+DBUpdateScripts="sql/updates"
 
 echo 
 echo Welcome to MySQLfs database upgrade script - relase 0.4.2beta
