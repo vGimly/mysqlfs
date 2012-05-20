@@ -80,7 +80,7 @@ echo Current DB Version $CurrentDB
 NextDB=`expr $CurrentDB + 1`
 NextFile=`echo 0000000$NextDB | rev | cut -c 1-8 | rev`
 
-echo Checking for a $NextDB version...
+echo "Checking for a possibile DB version # $NextDB "
 
 while [ -f $DBUpdateScripts/$NextFile.sql ]; do
   echo "Executing $DBUpdateScripts/$NextFile.sql"
