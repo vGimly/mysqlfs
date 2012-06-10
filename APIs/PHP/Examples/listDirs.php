@@ -16,7 +16,10 @@ include "./config.php";
 
 $MySQLfs = new MySQLfs($_CONFIG["hostname"], $_CONFIG["dbname"], $_CONFIG["username"], $_CONFIG["password"]);
 
-echo "Directory content for path ".$argv[1]."\n";
+echo "\n";
+if ($argc < 2) die ("Not enough parameters!\n\nlistDirs <path>");
+
+echo "Directory content for path ".$argv[1]."\n\n";
 
 $Root = $MySQLfs->fetchPath($argv[1]);
 

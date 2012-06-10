@@ -195,4 +195,61 @@ class MySQLfs {
 	return $this->fetchDir($inode);
     }
 
+    /**
+     * Returns a string containing an data block
+     *
+     * @author Andrea Brancatelli <andrea@brancatelli.it>
+     * @package MySQLfsAPI
+     * @param integer $inode The Inode to Return
+     * @param integer $seq The Inode sequence to Return
+     * @return string The inode content or FALSE if the requested Inode doesn't exist
+     */
+    function fetchDataBlock($inode, $seq)
+    {
+
+	$blockCount = $this->getSingleValue("SELECT COUNT(*) FROM data_blocks WHERE inode = '".$inode."' AND seq = '".$seq."'");
+	if ($blockCount > 0)
+		return $this->getSingleValue("SELECT data FROM data_blocks WHERE inode = '".$inode."' AND seq = '".$seq."'");
+	else
+		return FALSE;
+
+    } 
+    
+
+    /**
+     * Returns a string containing a file requested as a full path
+     * Not to be used with big files as it creates a copy of the
+     * file in memory. If you need to read a big file read it
+     * block-by-block (see fetchDataBlock)
+     *
+     * @author Andrea Brancatelli <andrea@brancatelli.i>
+     * @package MySQLfsAPI
+     * @param string $path The file to return
+     * @return string The file content
+     */
+     function fetchFile($path)
+     {
+
+	$tree = $this->explodePath($path);
+
+        $inode = NULL;
+        foreach ($tree as $branch)
+        {
+                $thisBranch = $this->locateInode($branch, $inode);
+                $inode = $thisBranch["inode"];
+        }
+
+	$seq = 0;
+        $ret = "";
+
+	while ($nextBlock = $this->fetchDataBlock($inode, $seq))
+	{
+		$ret = $ret.$nextBlock;
+		$seq++;
+	}
+
+	return $ret;
+
+     }
+
 }
