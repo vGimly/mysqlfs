@@ -190,6 +190,14 @@ static int mysqlfs_mkdir(const char *path, mode_t mode){
     return 0;
 }
 
+
+/**
+ * Delete a path - doesn't matter if it's a file
+ * or a directory.
+ *
+ * @param char path
+ */
+
 static int mysqlfs_unlink(const char *path)
 {
     int ret;

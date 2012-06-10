@@ -1,4 +1,7 @@
-* Fix the file deletion stuff
+* Deleting a file currently in use will purge all the data blocks
+  even if they are currently in use. This could lead to some strange
+  situation in the unix world where using a deleted file is a common
+  pratice.
 
 * Implement new 2.6 API FUSE functions
 
