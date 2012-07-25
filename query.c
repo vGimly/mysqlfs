@@ -404,6 +404,9 @@ int query_truncate(MYSQL *mysql, const char *path, off_t length)
 
     lock_inode(mysql, inode);
 
+    /* Start a transaction */
+    ret = mysql_query(mysql, "BEGIN");
+
     snprintf(sql, SQL_MAX,
              "DELETE FROM data_blocks WHERE inode=%ld AND seq > %ld",
 	     inode, info.seq_last);
@@ -418,16 +421,28 @@ int query_truncate(MYSQL *mysql, const char *path, off_t length)
     if ((ret = mysql_query(mysql, sql))) goto err_out;
 
     snprintf(sql, SQL_MAX,
+             "UPDATE data_blocks SET datalength=OCTET_LENGTH(data) "
+	     "WHERE inode=%ld AND seq=%ld",
+             inode, info.seq_last);
+    log_printf(LOG_D_SQL, "sql=%s\n", sql);
+    if ((ret = mysql_query(mysql, sql))) goto err_out;
+
+    snprintf(sql, SQL_MAX,
              "UPDATE inodes SET size=%lld WHERE inode=%ld",
              length, inode);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     if ((ret = mysql_query(mysql, sql))) goto err_out;
+
+    /* Close the transaction */
+    commitret = mysql_query(mysql, "COMMIT");
 
     unlock_inode(mysql, inode);
 
     return 0;
 
 err_out:
+    /* Rollback the transaction */
+    commitret = mysql_query(mysql, "ROLLBACK");
     unlock_inode(mysql, inode);
     log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
     return ret;
@@ -771,7 +786,7 @@ int query_read(MYSQL *mysql, long inode, const char *buf, size_t size,
 
     /* Read all required blocks */
     snprintf(sql, SQL_MAX,
-             "SELECT seq, data, LENGTH(data) FROM data_blocks WHERE inode=%ld AND seq>=%lu AND seq <=%lu ORDER BY seq ASC",
+             "SELECT seq, data, datalength FROM data_blocks WHERE inode=%ld AND seq>=%lu AND seq <=%lu ORDER BY seq ASC",
              inode, info.seq_first, info.seq_last);
 
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
@@ -967,6 +982,18 @@ static int write_one_block(MYSQL *mysql, long inode,
 	log_printf(LOG_ERROR, "failed closing the statement: %s\n", mysql_stmt_error(stmt));
 
 
+    snprintf(sql, SQL_MAX,
+             "UPDATE data_blocks SET datalength=OCTET_LENGTH(data) "
+             "WHERE inode=%ld AND seq=%ld",
+             inode, seq);
+    log_printf(LOG_D_SQL, "sql=%s\n", sql);
+    if(mysql_query(mysql, sql)){
+             mysqlerrno = mysql_errno(mysql);
+             log_printf(LOG_ERROR, "WriteOneBlock Update DataLength - mysql_error: %u %s\n", mysqlerrno, mysql_error(mysql));
+             return -EIO;
+    }
+
+
     return size;
 
 err_out:
@@ -1061,7 +1088,7 @@ int query_write(MYSQL *mysql, long inode, const char *data, size_t size,
 	this will also avoid problems with non-deterministic
 	updates.... */
     snprintf(sql, SQL_MAX,
-             "SELECT SUM(OCTET_LENGTH(data)) INTO @iNodeSize FROM data_blocks WHERE inode = %ld",
+             "SELECT SUM(datalenght) INTO @iNodeSize FROM data_blocks WHERE inode = %ld",
              inode);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     mysql_query(mysql, sql);
@@ -1153,7 +1180,7 @@ ssize_t query_size_block(MYSQL *mysql, long inode, unsigned long seq)
     MYSQL_RES *result;
     MYSQL_ROW row;
 
-    snprintf(sql, SQL_MAX, "SELECT LENGTH(data) FROM data_blocks WHERE inode=%ld AND seq=%lu",
+    snprintf(sql, SQL_MAX, "SELECT datalength FROM data_blocks WHERE inode=%ld AND seq=%lu",
              inode, seq);
 
     ret = mysql_query(mysql, sql);
@@ -1433,10 +1460,14 @@ int query_fsck(MYSQL *mysql)
     long int inode;
     long int size;
     
-    snprintf(sql, SQL_MAX, "select inode, sum(OCTET_LENGTH(data)) as size from data_blocks group by inode");
-
+    printf("Stage 5... resync datablock lenght cache\n");
+    snprintf(sql, SQL_MAX, "UPDATE `data_blocks` SET `datalength` = OCTET_LENGTH(`data`)");
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
-
+    ret = mysql_query(mysql, sql);
+    
+    printf("Stage 5... recompute inode sizes\n");
+    snprintf(sql, SQL_MAX, "select inode, sum(datalength) as size from data_blocks group by inode");
+    log_printf(LOG_D_SQL, "sql=%s\n", sql);
     ret = mysql_query(mysql, sql);
 
     MYSQL_RES* myresult;
