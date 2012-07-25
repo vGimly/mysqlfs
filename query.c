@@ -1088,7 +1088,7 @@ int query_write(MYSQL *mysql, long inode, const char *data, size_t size,
 	this will also avoid problems with non-deterministic
 	updates.... */
     snprintf(sql, SQL_MAX,
-             "SELECT SUM(datalenght) INTO @iNodeSize FROM data_blocks WHERE inode = %ld",
+             "SELECT SUM(datalength) INTO @iNodeSize FROM data_blocks WHERE inode = %ld",
              inode);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     mysql_query(mysql, sql);
@@ -1460,7 +1460,7 @@ int query_fsck(MYSQL *mysql)
     long int inode;
     long int size;
     
-    printf("Stage 5... resync datablock lenght cache\n");
+    printf("Stage 5... resync datablock length cache\n");
     snprintf(sql, SQL_MAX, "UPDATE `data_blocks` SET `datalength` = OCTET_LENGTH(`data`)");
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     ret = mysql_query(mysql, sql);
