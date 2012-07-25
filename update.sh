@@ -32,7 +32,7 @@ read DBPass
 echo
 
 echo Please confirm the following settings:
-echo mysql://$DBUser:$DBPass@$DBUser/$DBName
+echo mysql://$DBUser:$DBPass@$DBHost/$DBName
 echo
 echo "Correct? (y/n)"
 read Correct
