@@ -9,6 +9,7 @@
 	  to interact with mysqlfs. Basically now you can
 	  fetch datas (or browse the filesystem) directly
 	  within mysql from PHP. Very cool.
+	* Truncating a file is now transaction safe
 
 2012-05-20  Andrea Brancatelli <andrea@brancatelli.it>
 	* First draft of a DB Update scripting system:

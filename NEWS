@@ -1,7 +1,7 @@
 What is new in 0.4.2
 --------------------
 
-* inode size is precalcolated in a replicated environment (should speed
+* Inode size is precalcolated in a replicated environment (should speed
   up things a lot!)
 
 * Database upgrading script - a basic version, but better than nothing,
@@ -17,6 +17,8 @@ What is new in 0.4.2
 * Included here's a very rough version of a PHP API to interact with
   mysqlfs. Basically now you can fetch datas (or browse the filesystem)
   directly within mysql from PHP. Very cool.
+
+* Improvement to the transaction-safe stuff.
 
 
 What is new in 0.4.1
