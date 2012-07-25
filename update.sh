@@ -71,7 +71,7 @@ echo
 echo Checking current DATABASE_VERSION:
 CurrentDB=`echo "SELECT MAX(CURRENT_VERSION) FROM DATABASE_VERSION;" | mysql -N -h $DBHost -u $DBUser --password=$DBPass $DBName`
 
-if [ "$CurrentDB" == "NULL" ]; then
+if [ "$CurrentDB" = "NULL" ]; then
   CurrentDB=0
 fi
 
