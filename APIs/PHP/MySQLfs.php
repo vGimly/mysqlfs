@@ -206,7 +206,11 @@ class MySQLfs {
 	$affected =& $this->dbLink->exec($query);
 	if (PEAR::isError($affected)) { die($affected->getMessage()); }	
 
-	$size = $this->getSingleValue("SELECT SUM(OCTET_LENGTH(data)) FROM data_blocks WHERE inode = '".$inode."'");
+	$query  = "UPDATE data_blocks SET datalength = OCTET_LENGTH(data) WHERE inode = '".$inode."' AND seq = '".$seq."'";
+	$affected =& $this->dbLink->exec($query);
+	if (PEAR::isError($affected)) { die($affected->getMessage()); }	
+
+	$size = $this->getSingleValue("SELECT SUM(datalength) FROM data_blocks WHERE inode = '".$inode."'");
 
 	$query  = "UPDATE inodes SET size = '".$size."' WHERE inode = '".$inode."'";
 	$affected =& $this->dbLink->exec($query);
