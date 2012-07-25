@@ -1,3 +1,15 @@
+2012-07-25  Andrea Brancatelli <andrea@brancatelli.it>
+	* Data_blocks size is now cached in a specific
+	  column in order to speed up any inode update.i
+	  Thanks to Armin Wied for the idea!
+	* Added an index to the tree table to speed up
+	  file seeking operations.
+	  Thanks to Armin Wied for this idea too!
+	* Included here's a very rough version of a PHP API
+	  to interact with mysqlfs. Basically now you can
+	  fetch datas (or browse the filesystem) directly
+	  within mysql from PHP. Very cool.
+
 2012-05-20  Andrea Brancatelli <andrea@brancatelli.it>
 	* First draft of a DB Update scripting system:
 	  just put the updates in sql/updates and it will
