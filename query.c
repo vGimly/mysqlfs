@@ -442,7 +442,7 @@ int query_truncate(MYSQL *mysql, const char *path, off_t length)
 
 err_out:
     /* Rollback the transaction */
-    commitret = mysql_query(mysql, "ROLLBACK");
+    ret = mysql_query(mysql, "ROLLBACK");
     unlock_inode(mysql, inode);
     log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
     return ret;
