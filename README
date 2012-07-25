@@ -50,7 +50,17 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
    you may create a [mysqlfs] section in your ~/.my.cnf file and
    set the parameters there.
 
-===> Upgrading
+===> Upgrading from 0.4.1 or higher
+
+   Upgrading from 0.4.1 or higher it's pretty simple. Close the running filesystem
+   (yes, you have to), BACKUP YOUR DATABASE, and run
+
+   $ ./update.sh
+
+   Answer to all the question and watch your DB get updated. When the updated has
+   finished, compile the new mysql, install it, and run it as usual.
+
+===> Upgrading from 0.4.0 or lower
 
    To upgrade your existing installation unfortunately you have to make some changes
    to the database.
