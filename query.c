@@ -434,7 +434,7 @@ int query_truncate(MYSQL *mysql, const char *path, off_t length)
     if ((ret = mysql_query(mysql, sql))) goto err_out;
 
     /* Close the transaction */
-    commitret = mysql_query(mysql, "COMMIT");
+    ret = mysql_query(mysql, "COMMIT");
 
     unlock_inode(mysql, inode);
 
