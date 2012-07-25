@@ -1,8 +1,8 @@
 -- Bogus BEGIN since TABLE definitions are not transaction-safe.
 BEGIN;
 
--- Prepopulate the data block size cache
-UPDATE `data_blocks` SET `datalength` = OCTET_LENGTH(`data`);
+-- Add an index to the tree table
+CREATE INDEX `tree_name` ON `tree` (`name`);
 
 -- Commit everything
 COMMIT;
