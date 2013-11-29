@@ -26,6 +26,7 @@ struct mysqlfs_opt {
     unsigned int max_idling_conns;	/**< Maximum number of idling DB connections */
     char *logfile;		/**< filename to which local debug/log information will be written */
     int bg;			/**< (used for autotest) whether a term-less execution should background */
+    char *tableprefix;          /**< the prefix of the tables if applicable */
 };
 
 /** Initalize pool and preallocate connections */

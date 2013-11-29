@@ -697,19 +697,19 @@ void usage(){
     fprintf(stderr,
             "usage: mysqlfs [opts] <mountpoint>\n\n");
     fprintf(stderr,
-            "       mysqlfs [-osocket=/tmp/mysql.sock] [-obig_writes] [-oallow_other] [-odefault_permissions] [-oport=####] -ohost=host -ouser=user -opassword=password "
+            "       mysqlfs [-osocket=/tmp/mysql.sock] [-obig_writes] [-oallow_other] [-odefault_permissions] [-oport=####] [-otable_prefix=prefix] -ohost=host -ouser=user -opassword=password "
             "-odatabase=database ./mountpoint\n");
     fprintf(stderr,
-            "       mysqlfs [-d] [-ologfile=filename] [-obig_writes] [-oallow_other] [-odefault_permissions] -ohost=host -ouser=user -opassword=password "
+            "       mysqlfs [-d] [-ologfile=filename] [-obig_writes] [-oallow_other] [-odefault_permissions] [-otable_prefix=prefix] -ohost=host -ouser=user -opassword=password "
             "-odatabase=database ./mountpoint\n");
     fprintf(stderr,
-            "       mysqlfs [-mycnf_group=group_name] [-obig_writes] [-oallow_other] [-odefault_permissions] -ohost=host -ouser=user -opassword=password "
+            "       mysqlfs [-mycnf_group=group_name] [-obig_writes] [-oallow_other] [-odefault_permissions] [-otable_prefix=prefix] -ohost=host -ouser=user -opassword=password "
             "-odatabase=database ./mountpoint\n");
     fprintf(stderr, "\n(mimick mysql options)\n");
     fprintf(stderr,
-            "       mysqlfs [-obig_writes] [-oallow_other] [-odefault_permissions] --host=host --user=user --password=password --database=database ./mountpoint\n");
+            "       mysqlfs [-obig_writes] [-oallow_other] [-odefault_permissions] [--table_prefix=prefix] --host=host --user=user --password=password --database=database ./mountpoint\n");
     fprintf(stderr,
-            "       mysqlfs [-obig_writes] [-oallow_other] [-odefault_permissions] -h host -u user --password=password -D database ./mountpoint\n");
+            "       mysqlfs [-obig_writes] [-oallow_other] [-odefault_permissions] [-tp=prefix] -h host -u user --password=password -D database ./mountpoint\n");
 }
 
 /** macro to set a call value with a default -- defined yet? */
@@ -753,6 +753,9 @@ static struct fuse_opt mysqlfs_opts[] =
     MYSQLFS_OPT_KEY(  "socket=%s",	socket,	0),
     MYSQLFS_OPT_KEY("--socket=%s",	socket,	0),
     MYSQLFS_OPT_KEY( "-S %s",		socket,	0),
+    MYSQLFS_OPT_KEY(  "table_prefix=%s",tableprefix,    0),
+    MYSQLFS_OPT_KEY("--table_prefix=%s",tableprefix,    0),
+    MYSQLFS_OPT_KEY( "-tp %s",          tableprefix,    0),
     MYSQLFS_OPT_KEY(  "user=%s",	user,	0),
     MYSQLFS_OPT_KEY("--user=%s",	user,	0),
     MYSQLFS_OPT_KEY( "-u %s",		user,	0),
@@ -796,7 +799,8 @@ static int mysqlfs_opt_proc(void *data, const char *arg, int key, struct fuse_ar
             fprintf (stderr, "pool: %d initial connections\n", opt->init_conns);
             fprintf (stderr, "pool: %d idling connections\n", opt->max_idling_conns);
             fprintf (stderr, "logfile: file://%s\n", opt->logfile);
-            fprintf (stderr, "bg? %s (debug)\n\n", (opt->bg ? "yes" : "no"));
+            fprintf (stderr, "bg? %s (debug)\n", (opt->bg ? "yes" : "no"));
+            fprintf (stderr, "table prefix: %s\n\n", opt->tableprefix);
 
             exit (2);
 
