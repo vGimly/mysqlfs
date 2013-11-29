@@ -25,6 +25,13 @@ struct data_blocks_info {
     off_t		offset_first;	/**< Offset in 1st block.  */
 };
 
+struct table_names {
+    char *inodes;               /**< inodes table name */
+    char *tree;                 /**< tree table name */
+    char *data_blocks;          /**< data_blocks table name */
+};
+
+
 long query_inode(MYSQL *mysql, const char* path);
 int query_inode_full(MYSQL *mysql, const char* path, char *name, size_t name_len,
 		     long *inode, long *parent, long *nlinks);
@@ -56,6 +63,8 @@ int query_set_deleted(MYSQL *mysql, long inode);
 int query_purge_deleted(MYSQL *mysql, long inode);
 
 int query_fsck(MYSQL *mysql);
+
+void query_tablename_init(char *prefix);
 
 fsfilcnt_t query_total_inodes(MYSQL *mysql);
 fsblkcnt_t query_total_blocks(MYSQL *mysql);

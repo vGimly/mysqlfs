@@ -34,6 +34,8 @@
 #define SQL_MAX 10240
 #define INODE_CACHE_MAX 4096
 
+struct table_names *tables;
+
 static inline int lock_inode(MYSQL *mysql, long inode)
 {
     // TODO
@@ -89,8 +91,8 @@ int query_getattr(MYSQL *mysql, const char *path, struct stat *stbuf)
 
     snprintf(sql, SQL_MAX,
              "SELECT inode, mode, uid, gid, atime, mtime "
-             "FROM inodes WHERE inode=%ld",
-             inode);
+             "FROM %s WHERE inode=%ld",
+             tables->inodes, inode);
 
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
 
@@ -168,7 +170,7 @@ int query_inode_full(MYSQL *mysql, const char *path, char *name, size_t name_len
     char esc_name[PATH_MAX * 2];
 
     // TODO: Handle too long or too nested paths that don't fit in SQL_MAX!!!
-    sql_from_end += snprintf(sql_from_end, SQL_MAX, "tree AS t0");
+    sql_from_end += snprintf(sql_from_end, SQL_MAX, "%s AS t0", tables->tree);
     sql_where_end += snprintf(sql_where_end, SQL_MAX, "t0.parent IS NULL");
     while ((nameptr = strtok_r(pathptr, "/", &saveptr)) != NULL) {
         if (depth++ == 0) {
@@ -176,8 +178,8 @@ int query_inode_full(MYSQL *mysql, const char *path, char *name, size_t name_len
 	}
 
         mysql_real_escape_string(mysql, esc_name, nameptr, strlen(nameptr));
-	sql_from_end += snprintf(sql_from_end, SQL_MAX, " LEFT JOIN tree AS t%d ON t%d.inode = t%d.parent",
-		 depth, depth-1, depth);
+	sql_from_end += snprintf(sql_from_end, SQL_MAX, " LEFT JOIN %s AS t%d ON t%d.inode = t%d.parent",
+		 tables->tree, depth, depth-1, depth);
 	sql_where_end += snprintf(sql_where_end, SQL_MAX, " AND t%d.name = '%s'",
 		 depth, esc_name);
     }
@@ -186,11 +188,11 @@ int query_inode_full(MYSQL *mysql, const char *path, char *name, size_t name_len
     // TODO: Only run subquery when pointer to nlinks != NULL, otherwise we don't need it.
     if (nlinks != NULL) {
         snprintf(sql, SQL_MAX, "SELECT t%d.inode, t%d.name, t%d.parent, "
-        	     		   "       (SELECT COUNT(inode) FROM tree AS t%d WHERE t%d.inode=t%d.inode) "
+        	     		   "       (SELECT COUNT(inode) FROM %s AS t%d WHERE t%d.inode=t%d.inode) "
         			   "               AS nlinks "
         	     		   "FROM %s WHERE %s",
         	     depth, depth, depth, 
-        	     depth+1, depth+1, depth,
+        	     tables->tree, depth+1, depth+1, depth,
         	     sql_from, sql_where);
     }
     else
@@ -310,11 +312,11 @@ long seek_inode(MYSQL *mysql, const char *path, const long *parent_id)
 
   if (parent_id == NULL)
   {
-    snprintf(sql, SQL_MAX, "SELECT inode FROM tree WHERE parent IS NULL");
+    snprintf(sql, SQL_MAX, "SELECT inode FROM %s WHERE parent IS NULL", tables->tree);
   }
   else
   {
-    snprintf(sql, SQL_MAX, "SELECT inode FROM tree WHERE name = '%s' AND parent = %ld", LEFT_PART, parent_id);
+    snprintf(sql, SQL_MAX, "SELECT inode FROM %s WHERE name = '%s' AND parent = %ld", tables->tree, LEFT_PART, parent_id);
   }
 
   log_printf(LOG_D_SQL, "sql=%s\n", sql);
@@ -408,28 +410,28 @@ int query_truncate(MYSQL *mysql, const char *path, off_t length)
     ret = mysql_query(mysql, "BEGIN");
 
     snprintf(sql, SQL_MAX,
-             "DELETE FROM data_blocks WHERE inode=%ld AND seq > %ld",
-	     inode, info.seq_last);
+             "DELETE FROM %s WHERE inode=%ld AND seq > %ld",
+	     tables->data_blocks, inode, info.seq_last);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     if ((ret = mysql_query(mysql, sql))) goto err_out;
 
     snprintf(sql, SQL_MAX,
-             "UPDATE data_blocks SET data=RPAD(data, %zu, '\\0') "
+             "UPDATE %s SET data=RPAD(data, %zu, '\\0') "
 	     "WHERE inode=%ld AND seq=%ld",
-             info.length_last, inode, info.seq_last);
+             tables->data_blocks, info.length_last, inode, info.seq_last);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     if ((ret = mysql_query(mysql, sql))) goto err_out;
 
     snprintf(sql, SQL_MAX,
-             "UPDATE data_blocks SET datalength=OCTET_LENGTH(data) "
+             "UPDATE %s SET datalength=OCTET_LENGTH(data) "
 	     "WHERE inode=%ld AND seq=%ld",
-             inode, info.seq_last);
+             tables->data_blocks, inode, info.seq_last);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     if ((ret = mysql_query(mysql, sql))) goto err_out;
 
     snprintf(sql, SQL_MAX,
-             "UPDATE inodes SET size=%lld WHERE inode=%ld",
-             length, inode);
+             "UPDATE %s SET size=%lld WHERE inode=%ld",
+             tables->inodes, length, inode);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     if ((ret = mysql_query(mysql, sql))) goto err_out;
 
@@ -467,8 +469,8 @@ int query_mkdirentry(MYSQL *mysql, long inode, const char *name, long parent)
 
     mysql_real_escape_string(mysql, esc_name, name, strlen(name));
     snprintf(sql, SQL_MAX,
-             "INSERT INTO tree (name, parent, inode) VALUES ('%s', %ld, %ld)",
-             esc_name, parent, inode);
+             "INSERT INTO %s (name, parent, inode) VALUES ('%s', %ld, %ld)",
+             tables->tree, esc_name, parent, inode);
 
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     ret = mysql_query(mysql, sql);
@@ -497,8 +499,8 @@ int query_rmdirentry(MYSQL *mysql, const char *name, long parent)
 
     mysql_real_escape_string(mysql, esc_name, name, strlen(name));
     snprintf(sql, SQL_MAX,
-             "DELETE FROM tree WHERE name='%s' AND parent=%ld",
-             esc_name, parent);
+             "DELETE FROM %s WHERE name='%s' AND parent=%ld",
+             tables->tree, esc_name, parent);
 
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     ret = mysql_query(mysql, sql);
@@ -538,7 +540,7 @@ long query_mknod(MYSQL *mysql, const char *path, mode_t mode, dev_t rdev,
 
     if (path[0] == '/' && path[1] == '\0')  {
         snprintf(sql, SQL_MAX,
-                 "INSERT INTO tree (name, parent) VALUES ('/', NULL)");
+                 "INSERT INTO %s (name, parent) VALUES ('/', NULL)", tables->tree);
 
         log_printf(LOG_D_SQL, "sql=%s\n", sql);
         ret = mysql_query(mysql, sql);
@@ -551,8 +553,8 @@ long query_mknod(MYSQL *mysql, const char *path, mode_t mode, dev_t rdev,
             
         mysql_real_escape_string(mysql, esc_name, name, strlen(name));
         snprintf(sql, SQL_MAX,
-                 "INSERT INTO tree (name, parent) VALUES ('%s', %ld)",
-                 esc_name, parent);
+                 "INSERT INTO %s (name, parent) VALUES ('%s', %ld)",
+                 tables->tree, esc_name, parent);
 
         log_printf(LOG_D_SQL, "sql=%s\n", sql);
         ret = mysql_query(mysql, sql);
@@ -563,10 +565,10 @@ long query_mknod(MYSQL *mysql, const char *path, mode_t mode, dev_t rdev,
     new_inode_number = mysql_insert_id(mysql);
 
     snprintf(sql, SQL_MAX,
-             "INSERT INTO inodes(inode, mode, uid, gid, atime, ctime, mtime)"
+             "INSERT INTO %s (inode, mode, uid, gid, atime, ctime, mtime)"
              "VALUES(%ld, %d, %d, %d, UNIX_TIMESTAMP(NOW()), "
 	            "UNIX_TIMESTAMP(NOW()), UNIX_TIMESTAMP(NOW()))",
-             new_inode_number, mode,
+             tables->inodes, new_inode_number, mode,
 	     fuse_get_context()->uid, fuse_get_context()->gid);
 
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
@@ -621,8 +623,8 @@ int query_readdir(MYSQL *mysql, long inode, void *buf, fuse_fill_dir_t filler)
     MYSQL_RES* result;
     MYSQL_ROW row;
 
-    snprintf(sql, sizeof(sql), "SELECT name FROM tree WHERE parent = '%ld'",
-             inode);
+    snprintf(sql, sizeof(sql), "SELECT name FROM %s WHERE parent = '%ld'",
+             tables->tree, inode);
 
     ret = mysql_query(mysql, sql);
     if(ret){
@@ -663,8 +665,8 @@ int query_chmod(MYSQL *mysql, long inode, mode_t mode)
     char sql[SQL_MAX];
 
     snprintf(sql, SQL_MAX,
-             "UPDATE inodes SET mode=%d WHERE inode=%ld",
-             mode, inode);
+             "UPDATE %s SET mode=%d WHERE inode=%ld",
+             tables->inodes, mode, inode);
 
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
 
@@ -697,7 +699,7 @@ int query_chown(MYSQL *mysql, long inode, uid_t uid, gid_t gid)
     char sql[SQL_MAX];
     size_t index;
 
-    index = snprintf(sql, SQL_MAX, "UPDATE inodes SET ");
+    index = snprintf(sql, SQL_MAX, "UPDATE %s SET ", tables->inodes);
     if (uid != (uid_t)-1)
     	index += snprintf(sql + index, SQL_MAX - index, 
 			  "uid=%d ", uid);
@@ -739,10 +741,10 @@ int query_utime(MYSQL *mysql, long inode, struct utimbuf *time)
     char sql[SQL_MAX];
 
     snprintf(sql, SQL_MAX,
-             "UPDATE inodes "
+             "UPDATE %s "
              "SET atime=%ld, mtime=%ld "
              "WHERE inode=%lu",
-             time->actime, time->modtime, inode);
+             tables->inodes, time->actime, time->modtime, inode);
 
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
 
@@ -786,8 +788,8 @@ int query_read(MYSQL *mysql, long inode, const char *buf, size_t size,
 
     /* Read all required blocks */
     snprintf(sql, SQL_MAX,
-             "SELECT seq, data, datalength FROM data_blocks WHERE inode=%ld AND seq>=%lu AND seq <=%lu ORDER BY seq ASC",
-             inode, info.seq_first, info.seq_last);
+             "SELECT seq, data, datalength FROM %s WHERE inode=%ld AND seq>=%lu AND seq <=%lu ORDER BY seq ASC",
+	     tables->data_blocks, inode, info.seq_first, info.seq_last);
 
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
 
@@ -897,7 +899,7 @@ static int write_one_block(MYSQL *mysql, long inode,
     if (current_block_size == -ENXIO) {
         /* This data block has not yet been allocated */
         snprintf(sql, SQL_MAX,
-                 "INSERT INTO data_blocks SET inode=%ld, seq=%lu, data=''", inode, seq);
+                 "INSERT INTO %s SET inode=%ld, seq=%lu, data=''", tables->data_blocks, inode, seq);
         log_printf(LOG_D_SQL, "sql=%s\n", sql);
         if(mysql_query(mysql, sql)){
 		mysqlerrno = mysql_errno(mysql);
@@ -919,20 +921,20 @@ static int write_one_block(MYSQL *mysql, long inode,
     memset(bind, 0, sizeof(bind));
     if (offset == 0 && current_block_size == 0) {
         snprintf(sql, SQL_MAX,
-                 "UPDATE data_blocks "
+                 "UPDATE %s "
 		 "SET data=? "
 		 "WHERE inode=%ld AND seq=%lu",
-		 inode, seq);
+		 tables->data_blocks, inode, seq);
     } else if (offset == current_block_size) {
         snprintf(sql, sizeof(sql),
-                 "UPDATE data_blocks "
+                 "UPDATE %s "
 		 "SET data=CONCAT(data, ?) "
 		 "WHERE inode=%ld AND seq=%lu",
-		 inode, seq);
+		 tables->data_blocks, inode, seq);
     } else {
         size_t pos, new_size;
         pos = snprintf(sql, sizeof(sql),
-		 "UPDATE data_blocks SET data=CONCAT(");
+		 "UPDATE %s SET data=CONCAT(", tables->data_blocks);
 	if (offset > 0)
 	    pos += snprintf(sql + pos, sizeof(sql) - pos, "RPAD(IF(ISNULL(data),'', data), %llu, '\\0'),", offset);
 	pos += snprintf(sql + pos, sizeof(sql) - pos, "?,");
@@ -983,9 +985,9 @@ static int write_one_block(MYSQL *mysql, long inode,
 
 
     snprintf(sql, SQL_MAX,
-             "UPDATE data_blocks SET datalength=OCTET_LENGTH(data) "
+             "UPDATE %s SET datalength=OCTET_LENGTH(data) "
              "WHERE inode=%ld AND seq=%ld",
-             inode, seq);
+             tables->data_blocks, inode, seq);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     if(mysql_query(mysql, sql)){
              mysqlerrno = mysql_errno(mysql);
@@ -1088,14 +1090,14 @@ int query_write(MYSQL *mysql, long inode, const char *data, size_t size,
 	this will also avoid problems with non-deterministic
 	updates.... */
     snprintf(sql, SQL_MAX,
-             "SELECT SUM(datalength) INTO @iNodeSize FROM data_blocks WHERE inode = %ld",
-             inode);
+             "SELECT SUM(datalength) INTO @iNodeSize FROM %s WHERE inode = %ld",
+             tables->data_blocks, inode);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     mysql_query(mysql, sql);
 
     snprintf(sql, SQL_MAX,
-             "UPDATE inodes SET size = @iNodeSize WHERE inode = %ld",
-             inode);
+             "UPDATE %s SET size = @iNodeSize WHERE inode = %ld",
+             tables->inodes, inode);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     if(mysql_query(mysql, sql)) {
 	mysqlerrno = mysql_errno(mysql);
@@ -1125,8 +1127,8 @@ ssize_t query_size(MYSQL *mysql, long inode)
     MYSQL_RES *result;
     MYSQL_ROW row;
 
-    snprintf(sql, SQL_MAX, "SELECT size FROM inodes WHERE inode=%ld",
-             inode);
+    snprintf(sql, SQL_MAX, "SELECT size FROM %s WHERE inode=%ld",
+             tables->inodes, inode);
 
     ret = mysql_query(mysql, sql);
     if(ret){
@@ -1180,8 +1182,8 @@ ssize_t query_size_block(MYSQL *mysql, long inode, unsigned long seq)
     MYSQL_RES *result;
     MYSQL_ROW row;
 
-    snprintf(sql, SQL_MAX, "SELECT datalength FROM data_blocks WHERE inode=%ld AND seq=%lu",
-             inode, seq);
+    snprintf(sql, SQL_MAX, "SELECT datalength FROM %s WHERE inode=%ld AND seq=%lu",
+             tables->data_blocks, inode, seq);
 
     ret = mysql_query(mysql, sql);
     if(ret){
@@ -1259,9 +1261,10 @@ int query_rename(MYSQL *mysql, const char *from, const char *to)
     free(tmp);
 
     snprintf(sql, SQL_MAX,
-             "UPDATE tree "
+             "UPDATE %s "
 	     "SET name='%s', parent=%ld "
 	     "WHERE inode=%ld AND name='%s' AND parent=%ld ",
+             tables->tree,
              esc_new_name, parent_to,
 	     inode, esc_old_name, parent_from);
 
@@ -1298,9 +1301,9 @@ int query_inuse_inc(MYSQL *mysql, long inode, int increment)
     char sql[SQL_MAX];
 
     snprintf(sql, SQL_MAX,
-             "UPDATE inodes SET inuse = inuse + %d "
+             "UPDATE %s SET inuse = inuse + %d "
              "WHERE inode=%lu",
-             increment, inode);
+             tables->inodes, increment, inode);
 
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
 
@@ -1328,8 +1331,8 @@ int query_purge_deleted(MYSQL *mysql, long inode)
     char sql[SQL_MAX];
 
     snprintf(sql, SQL_MAX,
-	     "DELETE FROM inodes WHERE inode=%ld AND inuse=0 AND deleted=1",
-             inode);
+	     "DELETE FROM %s WHERE inode=%ld AND inuse=0 AND deleted=1",
+             tables->inodes, inode);
 
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
 
@@ -1358,9 +1361,9 @@ int query_set_deleted(MYSQL *mysql, long inode)
     char sql[SQL_MAX];
 
     snprintf(sql, SQL_MAX,
-	     "UPDATE inodes LEFT JOIN tree ON inodes.inode = tree.inode SET inodes.deleted=1 "
+	     "UPDATE %s LEFT JOIN tree ON inodes.inode = tree.inode SET inodes.deleted=1 "
 	     "WHERE inodes.inode = %ld AND tree.name IS NULL",
-             inode);
+             tables->inodes, inode);
 
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
 
@@ -1402,7 +1405,7 @@ int query_fsck(MYSQL *mysql)
     char sql[SQL_MAX];
     printf("Stage 1...\n");
     snprintf(sql, SQL_MAX,
-             "DELETE from inodes WHERE inodes.deleted = 1");
+             "DELETE from %s WHERE deleted = 1", tables->inodes);
 
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
 
@@ -1414,7 +1417,7 @@ int query_fsck(MYSQL *mysql)
     }
     // 2. - delete direntries without corresponding inode
     printf("Stage 2...\n");
-    snprintf(sql, SQL_MAX, "delete from tree where tree.inode not in (select inode from inodes);");
+    snprintf(sql, SQL_MAX, "delete from %s where inode not in (select inode from %s);", tables->tree, tables->inodes);
 
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     ret = mysql_query(mysql, sql);
@@ -1429,7 +1432,7 @@ int query_fsck(MYSQL *mysql)
 
     // 3. set inuse=0 for all inodes
     printf("Stage 3...\n");
-    snprintf(sql, SQL_MAX, "UPDATE inodes SET inuse=0;");
+    snprintf(sql, SQL_MAX, "UPDATE %s SET inuse=0;", tables->inodes);
 
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
 
@@ -1443,7 +1446,7 @@ int query_fsck(MYSQL *mysql)
 
     // 4. delete data without existing inode
     printf("Stage 4...\n");
-    snprintf(sql, SQL_MAX, "delete from data_blocks where inode not in (select inode from inodes);");
+    snprintf(sql, SQL_MAX, "delete from %s where inode not in (select inode from %s);", tables->data_blocks, tables->inodes);
 
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
 
@@ -1461,12 +1464,12 @@ int query_fsck(MYSQL *mysql)
     long int size;
     
     printf("Stage 5... resync datablock length cache\n");
-    snprintf(sql, SQL_MAX, "UPDATE `data_blocks` SET `datalength` = OCTET_LENGTH(`data`)");
+    snprintf(sql, SQL_MAX, "UPDATE %s SET `datalength` = OCTET_LENGTH(`data`)", tables->data_blocks);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     ret = mysql_query(mysql, sql);
     
     printf("Stage 5... recompute inode sizes\n");
-    snprintf(sql, SQL_MAX, "select inode, sum(datalength) as size from data_blocks group by inode");
+    snprintf(sql, SQL_MAX, "select inode, sum(datalength) as size from %s group by inode", tables->data_blocks);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     ret = mysql_query(mysql, sql);
 
@@ -1478,13 +1481,13 @@ int query_fsck(MYSQL *mysql)
      inode = atol(row[0]);
      size = atol(row[1]);
                      
-      snprintf(sql, SQL_MAX, "update inodes set size=%ld where inode=%ld;", size, inode);
+      snprintf(sql, SQL_MAX, "update %s set size=%ld where inode=%ld;", tables->inodes, size, inode);
       log_printf(LOG_D_SQL, "sql=%s\n", sql);
       result = mysql_query(mysql, sql);
 
 /*      if (myresult) { // something has gone wrong.. delete datablocks...
 
-        snprintf(sql, SQL_MAX, "delete from inodes where inode=%ld;", inode);
+        snprintf(sql, SQL_MAX, "delete from %s where inode=%ld;", tables->inodes, inode);
         log_printf(LOG_D_SQL, "sql=%s\n", sql);
         ret2 = mysql_query(mysql, sql);
 
@@ -1502,7 +1505,7 @@ int query_fsck(MYSQL *mysql)
 
 /*    printf("optimizing tables\n");
     snprintf(sql, SQL_MAX,
-             "OPTIMIZE TABLE inodes;");
+             "OPTIMIZE TABLE %s;", tables->inodes);
 
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
 
@@ -1536,7 +1539,7 @@ fsfilcnt_t query_total_inodes(MYSQL *mysql)
     MYSQL_ROW row;
     fsfilcnt_t inodes;
 
-    snprintf(sql, SQL_MAX, "SELECT COUNT(*) FROM inodes");
+    snprintf(sql, SQL_MAX, "SELECT COUNT(*) FROM %s", tables->inodes);
 
     ret = mysql_query(mysql, sql);
     if(ret){
@@ -1586,7 +1589,7 @@ fsblkcnt_t query_total_blocks(MYSQL *mysql)
     MYSQL_ROW row;
     fsblkcnt_t blocks;
 
-    snprintf(sql, SQL_MAX, "SELECT CEIL(SUM(size)/%d) from inodes", DATA_BLOCK_SIZE);
+    snprintf(sql, SQL_MAX, "SELECT CEIL(SUM(size)/%d) from %s", DATA_BLOCK_SIZE, tables->inodes);
 
     ret = mysql_query(mysql, sql);
     if(ret){
@@ -1622,3 +1625,21 @@ fsblkcnt_t query_total_blocks(MYSQL *mysql)
     return blocks;
 }
 
+void query_tablename_init(char *prefix)
+{
+    if (prefix == NULL) {
+        prefix = "";
+    }
+
+    int prefixlength = strlen(prefix);
+    tables = malloc(sizeof(struct table_names));
+    tables->inodes = malloc(prefixlength + 7);
+    tables->tree = malloc(prefixlength + 4);
+    tables->data_blocks = malloc(prefixlength + 11);
+    strcpy(tables->inodes, prefix);
+    strcat(tables->inodes, "inodes");
+    strcpy(tables->tree, prefix);
+    strcat(tables->tree, "tree");
+    strcpy(tables->data_blocks, prefix);
+    strcat(tables->data_blocks, "data_blocks");
+}

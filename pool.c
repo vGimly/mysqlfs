@@ -176,6 +176,8 @@ int pool_init(struct mysqlfs_opt *opt_arg)
     log_printf(LOG_D_POOL, "%s()\n", __func__);
     opt = opt_arg;
 
+    query_tablename_init(opt->tableprefix);
+
     for (i = 0; i < opt->init_conns; i++) {
 	void *conn = pool_open_mysql_connection();
 	lifo_put(conn);
