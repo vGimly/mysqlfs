@@ -14,7 +14,7 @@
 include "../MySQLfs.php";
 include "./config.php";
 
-$MySQLfs = new MySQLfs($_CONFIG["hostname"], $_CONFIG["dbname"], $_CONFIG["username"], $_CONFIG["password"]);
+$MySQLfs = new MySQLfs($_CONFIG["hostname"], $_CONFIG["dbname"], $_CONFIG["username"], $_CONFIG["password"], $_CONFIG["tablePrefix"]);
 
 echo "\n";
 if ($argc < 2) die ("Not enough parameters!\n\nlistDirs <path>");
