@@ -30,6 +30,7 @@
 #include "log.h"
 
 struct mysqlfs_opt *opt;
+struct table_names *tables;
 
 /** Used in lifo_put() and lifo_get() to maintain a LIFO list. */
 struct pool_lifo {

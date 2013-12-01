@@ -1633,13 +1633,18 @@ void query_tablename_init(char *prefix)
 
     int prefixlength = strlen(prefix);
     tables = malloc(sizeof(struct table_names));
-    tables->inodes = malloc(prefixlength + 7);
-    tables->tree = malloc(prefixlength + 4);
-    tables->data_blocks = malloc(prefixlength + 11);
+    tables->inodes = malloc(prefixlength + 8);        // Remember the null!
+    tables->tree = malloc(prefixlength + 5);
+    tables->data_blocks = malloc(prefixlength + 12);
     strcpy(tables->inodes, prefix);
     strcat(tables->inodes, "inodes");
     strcpy(tables->tree, prefix);
     strcat(tables->tree, "tree");
     strcpy(tables->data_blocks, prefix);
     strcat(tables->data_blocks, "data_blocks");
+
+    fprintf(stderr, " ** Tree table: %s\n", tables->tree);
+    fprintf(stderr, " ** Inodes table: %s\n", tables->inodes);
+    fprintf(stderr, " ** Data blocks table: %s\n", tables->data_blocks);
+
 }
