@@ -12,7 +12,7 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
 
   During development mysqlfs is checked against:
 
-  * FreeBSD 9
+  * FreeBSD 10 (This is a MUST, because fuse-kmod is filled with bugs)
   * Fedora Linux 15
   * Debian Linux 6
 
@@ -145,4 +145,4 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
 
 Copyright (C) 2006 Tsukasa Hamano <code@cuspy.org>
 Copyright (C) 2006 Michal Ludvig <michal@logix.cz>
-Copyright (C) 2012 Andrea Brancatelli <andrea@brancatelli.it>
+Copyright (C) 2013 Andrea Brancatelli <andrea@brancatelli.it>
