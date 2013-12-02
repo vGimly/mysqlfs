@@ -162,7 +162,7 @@ class MySQLfs {
     }
 
     /**
-     * Create a new file at the specified parent
+     * Create a new item (file/dir) at the specified parent
      *
      * @author Andrea Brancatelli <andrea@brancatelli.it>
      * @package MySQLfsAPI
@@ -170,7 +170,7 @@ class MySQLfs {
      * @param string $parent the folder containing it
      * @return integer the inode of the created file
      */
-    function createFile($name, $parent, $mode = "33204")
+    function createItem($name, $parent, $mode = "33204")
     {
         if ($parent == NULL)
             $query  = "INSERT INTO tree SET name = '".$name."', parent = NULL";
@@ -198,46 +198,6 @@ class MySQLfs {
 	return $inode;
     }
     
-    /**
-     * Create a new direcotry at the specified parent
-     *
-     * @author Andrea Brancatelli <andrea@brancatelli.it>
-     * @package MySQLfsAPI
-     * @param string $name filename
-     * @param string $parent the folder containing it
-     * @return integer the inode of the created file
-     */
-    function createDir($name, $parent, $mode = "16893")
-    {
-        
-        if ($parent == NULL)
-            $query  = "INSERT INTO tree SET name = '".$name."', parent = NULL";
-        else
-            $query  = "INSERT INTO tree SET name = '".$name."', parent = ".$parent;
-	$affected =& $this->dbLink->exec($query);
-	if (PEAR::isError($affected)) { die($affected->getMessage()); }	
-        
-	$inodeArray = $this->locateInode($name, $parent);
-        
-	$inode = $inodeArray["inode"];
-
-	$query  = "INSERT INTO inodes SET inode = '".$inode."', 
-					  inuse = 0,
-					  deleted = 0,
-					  mode = '".$mode."',
-					  uid = 0,
-					  gid = 0,
-					  atime = UNIX_TIMESTAMP(NOW()),
-					  ctime = UNIX_TIMESTAMP(NOW()),
-					  mtime = UNIX_TIMESTAMP(NOW()),
-					  size = 0";
-	$affected =& $this->dbLink->exec($query);
-	if (PEAR::isError($affected)) { die($affected->getMessage()); }	
-
-	return $inode;
-    }
-
-
     /**
      * Add a block of data to an inode
      * NOTE: this function DOES NOT (yet?) take in consideration
@@ -398,7 +358,7 @@ class MySQLfs {
 
 	if ($inode == "")
 	{
-		$inode = $this->createFile($branch, $parent);
+		$inode = $this->createItem($branch, $parent, "33204");
 		$block = str_split($content, 131072);
 		foreach ($block as $EachBlock)
 			$this->addBlock($inode, $EachBlock);
@@ -429,7 +389,7 @@ class MySQLfs {
                 $thisBranch = $this->locateInode($branch, $inode);
                 
                 if ($thisBranch["inode"] == "")
-                    $inode = $this->createDir($branch, $inode);
+                    $inode = $this->createItem($branch, $inode, "16893");
                 else
                     $inode = $thisBranch["inode"];
                 
