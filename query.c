@@ -1361,9 +1361,10 @@ int query_set_deleted(MYSQL *mysql, long inode)
     char sql[SQL_MAX];
 
     snprintf(sql, SQL_MAX,
-	     "UPDATE %s LEFT JOIN tree ON inodes.inode = tree.inode SET inodes.deleted=1 "
-	     "WHERE inodes.inode = %ld AND tree.name IS NULL",
-             tables->inodes, inode);
+	     "UPDATE %s i LEFT JOIN %s t ON i.inode = t.inode SET i.deleted=1 "
+	     "WHERE i.inode = %ld AND t.name IS NULL",
+             tables->inodes, tables->tree,
+             inode);
 
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
 
@@ -1625,6 +1626,11 @@ fsblkcnt_t query_total_blocks(MYSQL *mysql)
     return blocks;
 }
 
+/**
+ * Tables' name initialization
+ *
+ * @param prefix the prefix string
+ */
 void query_tablename_init(char *prefix)
 {
     if (prefix == NULL) {
