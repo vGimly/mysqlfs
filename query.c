@@ -1361,9 +1361,10 @@ int query_set_deleted(MYSQL *mysql, long inode)
     char sql[SQL_MAX];
 
     snprintf(sql, SQL_MAX,
-	     "UPDATE %s LEFT JOIN tree ON inodes.inode = tree.inode SET inodes.deleted=1 "
-	     "WHERE inodes.inode = %ld AND tree.name IS NULL",
-             tables->inodes, inode);
+	     "UPDATE %s i LEFT JOIN %s t ON i.inode = t.inode SET i.deleted=1 "
+	     "WHERE i.inode = %ld AND t.name IS NULL",
+             tables->inodes, tables->tree,
+             inode);
 
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
 
@@ -1625,6 +1626,11 @@ fsblkcnt_t query_total_blocks(MYSQL *mysql)
     return blocks;
 }
 
+/**
+ * Tables' name initialization
+ *
+ * @param prefix the prefix string
+ */
 void query_tablename_init(char *prefix)
 {
     if (prefix == NULL) {
@@ -1633,13 +1639,18 @@ void query_tablename_init(char *prefix)
 
     int prefixlength = strlen(prefix);
     tables = malloc(sizeof(struct table_names));
-    tables->inodes = malloc(prefixlength + 7);
-    tables->tree = malloc(prefixlength + 4);
-    tables->data_blocks = malloc(prefixlength + 11);
+    tables->inodes = malloc(prefixlength + 8);        // Remember the null!
+    tables->tree = malloc(prefixlength + 5);
+    tables->data_blocks = malloc(prefixlength + 12);
     strcpy(tables->inodes, prefix);
     strcat(tables->inodes, "inodes");
     strcpy(tables->tree, prefix);
     strcat(tables->tree, "tree");
     strcpy(tables->data_blocks, prefix);
     strcat(tables->data_blocks, "data_blocks");
+
+    fprintf(stderr, " ** Tree table: %s\n", tables->tree);
+    fprintf(stderr, " ** Inodes table: %s\n", tables->inodes);
+    fprintf(stderr, " ** Data blocks table: %s\n", tables->data_blocks);
+
 }

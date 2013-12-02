@@ -22,17 +22,29 @@ class MySQLfs {
 
     var $dbLink;
 
+    var $tablePrefix;
+
+    var $treeTable;
+    var $datablocksTable;
+    var $inodesTable;
+
     /**
      * The base data model constructor. It just connects to the DB
      *
      * @author Andrea Brancatelli <andrea@brancatelli.it>
      * @package MySQLfsAPI
      */
-    function __construct($hostname, $database, $username, $password)
+    function __construct($hostname, $database, $username, $password, $tablePrefix = "")
     {
 
 	$_CONFIG["database"] = "mysqli://".$username.":".$password."@".$hostname."/".$database;
 	$_CONFIG["database_options"] = array();
+
+	$this->tablePrefix = $tablePrefix;
+
+	$this->treeTable = $this->tablePrefix."tree";
+	$this->datablocksTable = $this->tablePrefix."data_blocks";
+	$this->inodesTable = $this->tablePrefix."inodes";
 
         $this->dbLink =& MDB2::factory($_CONFIG["database"], $_CONFIG["database_options"]);
         if (PEAR::isError($this->dbLink)) {
@@ -154,9 +166,9 @@ class MySQLfs {
     {
         
 	if ($parent != NULL)
-		$ret = $this->getSingleRow("SELECT * FROM tree WHERE name = '".$name."' AND parent = '".$parent."'");
+		$ret = $this->getSingleRow("SELECT * FROM ".$this->treeTable." WHERE name = '".$name."' AND parent = '".$parent."'");
 	else
-		$ret = $this->getSingleRow("SELECT * FROM tree WHERE name = '".$name."' AND parent IS NULL");
+		$ret = $this->getSingleRow("SELECT * FROM ".$this->treeTable." WHERE name = '".$name."' AND parent IS NULL");
 
 	return $ret;
     }
@@ -173,16 +185,16 @@ class MySQLfs {
     function createItem($name, $parent, $mode = "33204")
     {
         if ($parent == NULL)
-            $query  = "INSERT INTO tree SET name = '".$name."', parent = NULL";
+            $query  = "INSERT INTO ".$this->treeTable." SET name = '".$name."', parent = NULL";
         else
-            $query  = "INSERT INTO tree SET name = '".$name."', parent = ".$parent;
+            $query  = "INSERT INTO ".$this->treeTable." SET name = '".$name."', parent = ".$parent;
 	$affected =& $this->dbLink->exec($query);
 	if (PEAR::isError($affected)) { die($affected->getMessage()); }	
 
 	$inodeArray =  $this->locateInode($name, $parent);
 	$inode = $inodeArray["inode"];
 
-	$query  = "INSERT INTO inodes SET inode = '".$inode."', 
+	$query  = "INSERT INTO ".$this->inodesTable." SET inode = '".$inode."', 
 					  inuse = 0,
 					  deleted = 0,
 					  mode = '".$mode."',
@@ -214,19 +226,19 @@ class MySQLfs {
      */
     function addBlock($inode, $content)
     {
-	$seq = $this->getSingleValue("SELECT COUNT(*) FROM data_blocks WHERE inode = '".$inode."'");
+	$seq = $this->getSingleValue("SELECT COUNT(*) FROM ".$this->datablocksTable." WHERE inode = '".$inode."'");
 
-	$query  = "INSERT INTO data_blocks SET data = '".addslashes($content)."', inode = '".$inode."', seq = '".$seq."'";
+	$query  = "INSERT INTO ".$this->datablocksTable." SET data = '".addslashes($content)."', inode = '".$inode."', seq = '".$seq."'";
 	$affected =& $this->dbLink->exec($query);
 	if (PEAR::isError($affected)) { die($affected->getMessage()); }	
 
-	$query  = "UPDATE data_blocks SET datalength = OCTET_LENGTH(data) WHERE inode = '".$inode."' AND seq = '".$seq."'";
+	$query  = "UPDATE ".$this->datablocksTable." SET datalength = OCTET_LENGTH(data) WHERE inode = '".$inode."' AND seq = '".$seq."'";
 	$affected =& $this->dbLink->exec($query);
 	if (PEAR::isError($affected)) { die($affected->getMessage()); }	
 
-	$size = $this->getSingleValue("SELECT SUM(datalength) FROM data_blocks WHERE inode = '".$inode."'");
+	$size = $this->getSingleValue("SELECT SUM(datalength) FROM ".$this->datablocksTable." WHERE inode = '".$inode."'");
 
-	$query  = "UPDATE inodes SET size = '".$size."' WHERE inode = '".$inode."'";
+	$query  = "UPDATE ".$this->inodesTable." SET size = '".$size."' WHERE inode = '".$inode."'";
 	$affected =& $this->dbLink->exec($query);
 	if (PEAR::isError($affected)) { die($affected->getMessage()); }	
     }
@@ -244,9 +256,9 @@ class MySQLfs {
 
 	$wholeDir = array();
 
-	$baseDir = $this->getSingleRow("SELECT * FROM tree, inodes WHERE inodes.inode = tree.inode AND tree.inode  = '".$inode."'");
+	$baseDir = $this->getSingleRow("SELECT * FROM ".$this->treeTable.", ".$this->inodesTable." WHERE ".$this->inodesTable.".inode = ".$this->treeTable.".inode AND ".$this->treeTable.".inode  = '".$inode."'");
 	$baseDir["name"] = ".";
-	$wholeDir = $this->getAllRows("SELECT * FROM tree, inodes WHERE inodes.inode = tree.inode AND parent = '".$baseDir["inode"]."' ORDER BY tree.name");
+	$wholeDir = $this->getAllRows("SELECT * FROM ".$this->treeTable.", ".$this->inodesTable." WHERE ".$this->inodesTable.".inode = ".$this->treeTable.".inode AND parent = '".$baseDir["inode"]."' ORDER BY ".$this->treeTable.".name");
 
 	array_unshift($wholeDir, $baseDir);
 
@@ -288,9 +300,9 @@ class MySQLfs {
     function fetchDataBlock($inode, $seq)
     {
 
-	$blockCount = $this->getSingleValue("SELECT COUNT(*) FROM data_blocks WHERE inode = '".$inode."' AND seq = '".$seq."'");
+	$blockCount = $this->getSingleValue("SELECT COUNT(*) FROM ".$this->datablocksTable." WHERE inode = '".$inode."' AND seq = '".$seq."'");
 	if ($blockCount > 0)
-		return $this->getSingleValue("SELECT data FROM data_blocks WHERE inode = '".$inode."' AND seq = '".$seq."'");
+		return $this->getSingleValue("SELECT data FROM ".$this->datablocksTable." WHERE inode = '".$inode."' AND seq = '".$seq."'");
 	else
 		return FALSE;
 
