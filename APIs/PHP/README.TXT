@@ -1,10 +1,10 @@
 
- MySQLfs - PHP API - release 0.4.2alpha
+ MySQLfs - PHP API - release 0.4.3
  Andrea Brancatelli <andrea@brancatelli.it>
 
  ######################################################################################
 
- This is the first release of the PHP API for MySQLfs.
+ This is the second release of the PHP API for MySQLfs.
 
  This first version allows you to:
 
