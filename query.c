@@ -665,8 +665,8 @@ int query_chmod(MYSQL *mysql, long inode, mode_t mode)
     char sql[SQL_MAX];
 
     snprintf(sql, SQL_MAX,
-             "UPDATE %s SET mode=%d WHERE inode=%ld",
-             tables->inodes, mode, inode);
+		"UPDATE %s SET mode = (((mode >> 9) << 9) | ((%d & ~ 32768) & ~16384)) WHERE inode=%ld",
+		tables->inodes, mode, inode);
 
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
 
