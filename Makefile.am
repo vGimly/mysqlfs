@@ -1,7 +1,7 @@
 # $Id: Makefile.am,v 1.4 2006/10/02 22:34:03 ludvigm Exp $
 
 bin_PROGRAMS = mysqlfs
-schema_DATA = sql/update/initial_schema.sql 
+schema_DATA = sql/updates/initial_schema.sql 
 schemadir = $(datadir)/$(distdir)/sql
 
 # because the source is not in a subdir, we cannot just put the tests in a SUBDIRS= :(
