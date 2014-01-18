@@ -823,9 +823,9 @@ static int mysqlfs_opt_proc(void *data, const char *arg, int key, struct fuse_ar
             break;
                 
         case KEY_BIGWRITES:
-	    #if (defined(BSD) && (BSD >= 199306))
+/*	    #if (defined(BSD) && (BSD >= 199306))
 	       fprintf(stderr, " * Please note that FreeBSD didn't support big_writes\n   when this code was written.\n   Trying to enable it anyhow.\n   If you see 'Enabling big writes...' it should work :-)\n");
-	    #endif
+	    #endif */
 	    #ifdef FUSE_CAP_BIG_WRITES
 	       fprintf(stderr, " * Enabling big writes...\n");
                fuse_opt_add_arg(outargs, "-obig_writes");
@@ -857,9 +857,9 @@ int main(int argc, char *argv[])
 
     fprintf (stderr, "\n%s version %s startup. Using fuse-%2.1f\n\n", PACKAGE_TARNAME, PACKAGE_VERSION, ((double) FUSE_USE_VERSION)/10.0);
 
-    #if (defined(BSD) && (BSD >= 199306))
+/**    #if (defined(BSD) && (BSD >= 199306))
 	fprint(stderr, "When using FreeBSD please make sure to use the -odefault_permissions parameter");
-    #endif
+    #endif */
 
     fuse_opt_parse(&args, &opt, mysqlfs_opts, mysqlfs_opt_proc);
 

@@ -4,50 +4,37 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
 
 ===> Requirements
 
-  - mysql-client libraries 5.0 or later
-  - mysql-server 5.0 or later
+  To use this package you need:
+  - mysql-client libraries 5.0 or later on the local machine
+  - A MySQL server 5.0 or later somewhere on the network (or on the local machine)
   - fuse 2.6 or later
 
-===> Compatibility
+===> Building instruction
 
-  During development mysqlfs is checked against:
+  To build the package you need:
+  - autoconf
+  - automake
+  - fuse-devel libs
+  - mysql-devel libs
 
-  * FreeBSD 10 (This is a MUST, because fuse-kmod is filled with bugs)
-  * Fedora Linux 15
-  * Debian Linux 6
+  Run the following commands:
+  #> autoreconf -vfi
+  #> ./configure
+  #> make
+  #> make install
 
-  And against MySQL 5.1 (mainly Linux) and MySQL 5.5 (mainly FreeBSD).
+===> First installation / upgrading
 
-===> Build
+   NOTE: if you are upgrading skip directly to step #2
 
-  If compiling from version-control, use "autoreconf -vfi" first.
-
-  For both version-control and tarball version run:
-  $ ./configure
-  $ make
-
-===> Usage
-
-  If you are UPGRADING from a previous version of mysqlfs please see below!
-
-1. Create database and account
+1. Create a database and a MySQL account
    mysql> CREATE DATABASE mysqlfs;
    mysql> GRANT SELECT, INSERT, UPDATE, DELETE ON mysqlfs.* TO mysqlfs@"%" IDENTIFIED BY 'password';
    mysql> FLUSH PRIVILEGES;
 
-   (note FAQ: Errors #1 "Access Denied For User" below)
+2. Execute mysqlfs_setup and answer to the questions about your db.
 
-2. Create tables
-   $ mysql -uroot -p mysqlfs < sql/schema.sql
-
-   Note:
-   - if you want to use table prefixes, you will need to modify the table names in the schema.sql
-     accordingly, i.e. in case of prefix 'mysqlfs_' the tablenames need to be 'mysqlfs_tree',
-     'mysqlfs_inodes' and 'mysqlfs_data_blocks')
-
-3. Execute the upgrading script "./update.sh" in the root
-
-4. Mount database as a filesystem
+4. Mount the filesystem (please change the parameters accordingly)
    $ mkdir fs
    $ ./mysqlfs -ohost=localhost -ouser=user -opassword=pass -odatabase=mysqlfs fs
 
@@ -55,27 +42,17 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
    you may create a [mysqlfs] section in your ~/.my.cnf file and
    set the parameters there.
 
-===> Upgrading from 0.4.1 or higher
-
-   Upgrading from 0.4.1 or higher it's pretty simple. Close the running filesystem
-   (yes, you have to), BACKUP YOUR DATABASE, and run
-
-   $ ./update.sh
-
-   Answer to all the question and watch your DB get updated. When the updated has
-   finished, compile the new mysql, install it, and run it as usual.
-
-===> Upgrading from 0.4.0 or lower
+===> Upgrading from 0.4.0 or lower versions
 
    To upgrade your existing installation unfortunately you have to make some changes
    to the database.
 
-   The recomended solution to upgrade your system is to compile mysqlfs 0.4.1 and
+   The recomended solution to upgrade your system is to compile a a newMySQLfs and
    create a NEW filesystem in a NEW database. Mount it alongside the old one and then
    just copy datas from the old filesystem to the new one. THIS IS THE RECOMENDED
    (AND PROBABILY THE ONLY CERTAIN) SOLUTION.
 
-   IN THE SQL DIR YOU CAN FIND A 0.4.0_to_0.4.1.sql FILE, BUT IT IS INFORMATIVE
+   IN THE SQL DIR YOU CAN FIND A 0.4.0_to_0.4.1.sql FILE, BUT IT IS "INFORMATIVE"
    ONLY - IT'S NOT MEANT TO BE RUN ON A RUNNING FILESYSTEM
 
    The problem lies in the handling of "sparse files": increasing the blocksize
@@ -83,7 +60,7 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
    More specifically your files will probably get filled with zeroes. You probably
    don't want that.
 
-===> Options
+===> Running options
 
   -ohost=<hostname>
     MySQL server host
@@ -98,18 +75,34 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
     MySQL database name
 
   -obig_writes
-    Enable big_writes (strongly suggested) - works only under Linux
+    Enable big_writes (strongly suggested)
 
   -oallow_other
     Enable filesystem access to different users than the one who mounted it.
     The corresponding option must be enabled in /etc/fuse.conf
 
   -odefault_permissions
-    Disable some extended permission checkings on files. Seems mandatory on
-    FreeBSD!
+    Disable some extended permission checkings on files. 
+
+===> Compatibility Matrix
+
+  During development mysqlfs is checked against:
+
+  * FreeBSD 10
+  * Fedora Linux 15
+  * Debian Linux 6
+  * Debian Linux 7
+
+  * MySQL 5.1
+  * MySQL 5.5
+  * MySQL 5.6
+
+  NOTE:
+  * FreeBSD 9 + FUSE-KMOD is NOT supported
 
 ===> Authors
 
 Copyright (C) 2006 Tsukasa Hamano <code@cuspy.org>
 Copyright (C) 2006 Michal Ludvig <michal@logix.cz>
-Copyright (C) 2013 Andrea Brancatelli <andrea@brancatelli.it>
+Copyright (C) 2012-2014 Andrea Brancatelli <andrea@brancatelli.it>
+
