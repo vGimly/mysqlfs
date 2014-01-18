@@ -13,7 +13,7 @@
 DBUpdateScripts="sql/updates"
 
 echo 
-echo Welcome to MySQLfs database upgrade script - relase 0.4.2beta
+echo Welcome to MySQLfs database upgrade script - relase 0.4.3
 echo
 echo It's recommend to shutdown MySQLfs's instance before upgrading the DB.
 echo Upgrading the DB with a working instance could corrupt your data.
