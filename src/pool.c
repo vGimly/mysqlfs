@@ -7,9 +7,7 @@
   See the file COPYING.
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "Config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,12 +16,8 @@
 #include <pthread.h>
 
 #include <fuse/fuse.h>
-#ifdef HAVE_MYSQL_MYSQL_H
+
 #include <mysql/mysql.h>
-#endif
-#ifdef HAVE_MYSQL_H
-#include <mysql.h>
-#endif
 
 #include "query.h"
 #include "pool.h"

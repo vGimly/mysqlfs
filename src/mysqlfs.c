@@ -1,15 +1,14 @@
 /*
  * mysqlfs - MySQL Filesystem
  * Copyright (C) 2006 Tsukasa Hamano <code@cuspy.org>
- * 
+ * Copyright (C) 2006 Michal Ludvig <michal@logix.cz>
+ * Copyright (C) 2012-2014 Andrea Brancatelli <andrea@brancatelli.it>
  *
  * This program can be distributed under the terms of the GNU GPL.
  * See the file COPYING.
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "Config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,13 +18,11 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <libgen.h>
+
 #include <fuse/fuse.h>
-#ifdef HAVE_MYSQL_MYSQL_H
+
 #include <mysql/mysql.h>
-#endif
-#ifdef HAVE_MYSQL_H
-#include <mysql.h>
-#endif
+
 #include <pthread.h>
 #include <sys/stat.h>
 
@@ -780,9 +777,9 @@ static int mysqlfs_opt_proc(void *data, const char *arg, int key, struct fuse_ar
     switch (key)
     {
         case FUSE_OPT_KEY_OPT: /* dig through the list for matches */
-    /*
-     * There are primitives for this in FUSE, but no need to change at this point
-     */
+	/*
+	 * There are primitives for this in FUSE, but no need to change at this point
+	 */
 	    fprintf(stderr, "Ignoring option %s", arg);
             break;
 
@@ -809,7 +806,7 @@ static int mysqlfs_opt_proc(void *data, const char *arg, int key, struct fuse_ar
             exit (0);
 
         case KEY_VERSION: /* show version and quit */
-	    fprintf (stderr, "%s-%s fuse-%2.1f\n\n", PACKAGE_TARNAME, PACKAGE_VERSION, ((double) FUSE_USE_VERSION)/10.0);
+	    fprintf (stderr, "MySQLfs %d.%d fuse-%d\n\n", MySQLfs_VERSION_MAJOR, MySQLfs_VERSION_MINOR, FUSE_VERSION);
 	    exit (0);
             
         case KEY_NOPRIVATE:
@@ -823,10 +820,8 @@ static int mysqlfs_opt_proc(void *data, const char *arg, int key, struct fuse_ar
             break;
                 
         case KEY_BIGWRITES:
-	    #ifdef FUSE_CAP_BIG_WRITES
-	       fprintf(stderr, " * Enabling big writes...\n");
-               fuse_opt_add_arg(outargs, "-obig_writes");
-	    #endif
+	    fprintf(stderr, " * Enabling big writes...\n");
+            fuse_opt_add_arg(outargs, "-obig_writes");
             break;
                 
         default: /* key != FUSE_OPT_KEY_OPT */
@@ -852,7 +847,7 @@ int main(int argc, char *argv[])
 
     log_file = stderr;
 
-    fprintf (stderr, "\n%s version %s startup. Using fuse-%2.1f\n\n", PACKAGE_TARNAME, PACKAGE_VERSION, ((double) FUSE_USE_VERSION)/10.0);
+    fprintf (stderr, "\nMySQLfs version %d.%d startup. Using fuse-%d\n\n", MySQLfs_VERSION_MAJOR, MySQLfs_VERSION_MINOR, FUSE_VERSION);
 
     fuse_opt_parse(&args, &opt, mysqlfs_opts, mysqlfs_opt_proc);
 

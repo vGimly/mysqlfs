@@ -1,0 +1,7 @@
+// the configured options and settings for MySQLfs
+#define MySQLfs_VERSION_MAJOR @MySQLfs_VERSION_MAJOR@
+#define MySQLfs_VERSION_MINOR @MySQLfs_VERSION_MINOR@
+
+#define FUSE_USE_VERSION @FUSE_USE_VERSION@
+
+#define MYSQL_MIN_VERSION @MYSQL_MIN_VERSION@

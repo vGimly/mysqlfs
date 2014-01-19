@@ -1,0 +1,48 @@
+cmake_minimum_required (VERSION 2.6)
+project (MySQLfs)
+
+# The version number.
+set (MySQLfs_VERSION_MAJOR 1)
+set (MySQLfs_VERSION_MINOR 0)
+
+MESSAGE(STATUS "Compiling MySQLfs ${MySQLfs_VERSION_MAJOR}.${MySQLfs_VERSION_MINOR} on ${CMAKE_SYSTEM}")
+
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
+
+FIND_PACKAGE(MySQL)
+IF(MYSQL_FOUND)
+    MESSAGE(STATUS "MySQL found at: ${MYSQL_INCLUDE_DIR}, ${MYSQL_LIBRARIES}")
+ELSE(MYSQL_FOUND)
+    MESSAGE(SEND_ERROR "Couldn't find MySQL include files and/or library")
+ENDIF(MYSQL_FOUND)
+
+set(MYSQL_MIN_VERSION 5000)
+
+find_package(FUSE 2.6 REQUIRED)
+if(FUSE_FOUND)
+    MESSAGE(STATUS "FUSE found at: ${FUSE_INCLUDE_DIRS}, ${FUSE_LIBRARIES}")
+endif()
+
+set(FUSE_USE_VERSION 26)
+
+# configure a header file to pass some of the CMake settings
+# to the source code
+MESSAGE(STATUS "Writing ${PROJECT_SOURCE_DIR}/src/Config.h.in to ${PROJECT_BINARY_DIR}/Config.h")
+configure_file (
+          "${PROJECT_SOURCE_DIR}/src/Config.h.in"
+          "${PROJECT_BINARY_DIR}/Config.h"
+)
+
+
+# add the binary tree to the search path for include files
+# so that we will find TutorialConfig.h
+include_directories("${PROJECT_BINARY_DIR}")
+
+add_definitions(${FUSE_DEFINITIONS})
+
+include_directories(${FUSE_INCLUDE_DIRS})
+include_directories(${MYSQL_INCLUDE_DIR})
+
+add_subdirectory(src)
+
+install(FILES "mysqlfs_setup" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ DESTINATION bin)
