@@ -12,14 +12,12 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
 ===> Building instruction
 
   To build the package you need:
-  - autoconf
-  - automake
+  - CMake
   - fuse-devel libs
   - mysql-devel libs
 
   Run the following commands:
-  #> autoreconf -vfi
-  #> ./configure
+  #> cmake .
   #> make
   #> make install
 
