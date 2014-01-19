@@ -425,7 +425,7 @@ int query_truncate(MYSQL *mysql, const char *path, off_t length)
     if ((ret = mysql_query(mysql, sql))) goto err_out;
 
     snprintf(sql, SQL_MAX,
-             "UPDATE %s SET size=%lld WHERE inode=%ld",
+             "UPDATE %s SET size=%ld WHERE inode=%ld",
              tables->inodes, length, inode);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     if ((ret = mysql_query(mysql, sql))) goto err_out;
@@ -931,11 +931,11 @@ static int write_one_block(MYSQL *mysql, long inode,
         pos = snprintf(sql, sizeof(sql),
 		 "UPDATE %s SET data=CONCAT(", tables->data_blocks);
 	if (offset > 0)
-	    pos += snprintf(sql + pos, sizeof(sql) - pos, "RPAD(IF(ISNULL(data),'', data), %llu, '\\0'),", offset);
+	    pos += snprintf(sql + pos, sizeof(sql) - pos, "RPAD(IF(ISNULL(data),'', data), %ld, '\\0'),", offset);
 	pos += snprintf(sql + pos, sizeof(sql) - pos, "?,");
 	new_size = offset + size;
 	if (offset + size < current_block_size) {
-	    pos += snprintf(sql + pos, sizeof(sql) - pos, "SUBSTRING(data FROM %llu),", offset + size + 1);
+	    pos += snprintf(sql + pos, sizeof(sql) - pos, "SUBSTRING(data FROM %lu),", offset + size + 1);
 	    new_size = current_block_size;
 	}
 	sql[--pos] = '\0';	/* Remove the trailing comma. */
