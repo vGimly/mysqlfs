@@ -14,7 +14,7 @@
 ##
 ##
 
-DBUpdateScripts="sql/updates"
+DBUpdateScripts="/usr/local/share/mysqlfs/sql/updates"
 
 clear
 echo 

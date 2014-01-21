@@ -45,6 +45,8 @@ include_directories(${MYSQL_INCLUDE_DIR})
 
 add_subdirectory(src)
 
+FILE(GLOB files "${PROJECT_SOURCE_DIR}/src/sql/updates/*.sql")
+MESSAGE(STATUS "SQL updates: ${files}")
+
 install(FILES "mysqlfs_setup" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ DESTINATION bin)
-FILE(GLOB files "${CMAKE_SOURCE_DIR}/sql/updates/*.sql")
-install(FILES ${SQL_UPDATES} DESTINATION share/sql/update)
+install(FILES ${files} DESTINATION share/mysqlfs/sql/update)
