@@ -35,28 +35,28 @@ echo
 echo "Please insert your DB host (leave blank for localhost):"
 printf "#> "
 read DBHost
-if [ "$DBHost" == "" ]; then
+if [ "$DBHost" = "" ]; then
 	DBHost="localhost"
 fi
 
 echo "Please insert your MySQLfs DB name (leave blank for mysqlfs):"
 printf "#> "
 read DBName
-if [ "$DBName" == "" ]; then
+if [ "$DBName" = "" ]; then
 	DBName="mysqlfs"
 fi
 
 echo "Please insert your MySQLfs username (leave blank for mysqlfs):"
 printf "#> "
 read DBUser
-if [ "$DBUser" == "" ]; then
+if [ "$DBUser" = "" ]; then
 	DBUser="mysqlfs"
 fi
 
 echo "Please insert your MySQLfs password (leave blank for mysqlfs):"
 printf "#> "
 read DBPass
-if [ "$DBPass" == "" ]; then
+if [ "$DBPass" = "" ]; then
 	DBPass="mysqlfs"
 fi
 
