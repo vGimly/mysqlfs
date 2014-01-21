@@ -14,11 +14,11 @@
 ##
 ##
 
-DBUpdateScripts="/usr/local/share/mysqlfs/sql/updates"
+DBUpdateScripts="/usr/local/share/mysqlfs/sql/update"
 
 clear
 echo 
-echo Welcome to MySQLfs database setup script - relase 0.4.3
+echo Welcome to MySQLfs database setup script - relase 1.0
 echo
 echo
 echo ============================================================
