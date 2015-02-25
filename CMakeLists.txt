@@ -25,6 +25,14 @@ endif()
 
 set(FUSE_USE_VERSION 26)
 
+find_package( LibM REQUIRED )
+IF(LibM_FOUND)
+    MESSAGE(STATUS "LibM found at: ${LibM_LIBRARY_DIR}, ${LibM_LIBRARIES}")
+ELSE(LibM_FOUND)
+    MESSAGE(SEND_ERROR "Couldn't find LibM include files and/or library")
+ENDIF(LibM_FOUND)
+
+
 # configure a header file to pass some of the CMake settings
 # to the source code
 MESSAGE(STATUS "Writing ${PROJECT_SOURCE_DIR}/src/Config.h.in to ${PROJECT_BINARY_DIR}/Config.h")
@@ -42,6 +50,8 @@ add_definitions(${FUSE_DEFINITIONS})
 
 include_directories(${FUSE_INCLUDE_DIRS})
 include_directories(${MYSQL_INCLUDE_DIR})
+
+SET( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lm")
 
 add_subdirectory(src)
 
