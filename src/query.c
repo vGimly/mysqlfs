@@ -386,7 +386,7 @@ int query_rmdirentry(MYSQL *mysql, const char *name, long parent)
 
     snprintf(sql, SQL_MAX,
              "SELECT COUNT(*) FROM %s AS t0 JOIN %s AS t1 ON t0.parent = t1.inode WHERE t1.name='%s' AND t1.parent = %ld",
-             tables->tree; tables->tree, esc_name, parent);
+             tables->tree, tables->tree, esc_name, parent);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
 
     ret = mysql_query(mysql, sql);
@@ -413,8 +413,11 @@ int query_rmdirentry(MYSQL *mysql, const char *name, long parent)
     }
 
     /* The folder contains something, so we return ERROR */
-    if(!row[0]){
-        return -EIO;
+    if(atoll(row[0])){
+        log_printf(LOG_INFO, "Directory not empty: %lld file(s) found\n", atoll(row[0]));
+        return -ENOTEMPTY;
+    }else{
+        log_printf(LOG_DEBUG, "Directory is empty: %lld files found\n", atoll(row[0]));
     }
 
     mysql_free_result(result);
