@@ -379,8 +379,46 @@ int query_rmdirentry(MYSQL *mysql, const char *name, long parent)
     int ret;
     char sql[SQL_MAX];
     char esc_name[PATH_MAX * 2];
+    MYSQL_RES* result;
+    MYSQL_ROW row;
 
     mysql_real_escape_string(mysql, esc_name, name, strlen(name));
+
+    snprintf(sql, SQL_MAX,
+             "SELECT COUNT(*) FROM %s AS t0 JOIN %s AS t1 ON t0.parent = t1.inode WHERE t1.name='%s' AND t1.parent = %ld",
+             tables->tree; tables->tree, esc_name, parent);
+    log_printf(LOG_D_SQL, "sql=%s\n", sql);
+
+    ret = mysql_query(mysql, sql);
+    if(ret){
+        log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
+        return -EIO;
+    }
+
+    result = mysql_store_result(mysql);
+    if(!result){
+        log_printf(LOG_ERROR, "ERROR: mysql_store_result()\n");
+        log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
+        return -EIO;
+    }
+
+    if(mysql_num_rows(result) != 1 || mysql_num_fields(result) != 1){
+        mysql_free_result(result);
+        return -EIO;
+    }
+
+    row = mysql_fetch_row(result);
+    if(!row){
+        return -EIO;
+    }
+
+    /* The folder contains something, so we return ERROR */
+    if(!row[0]){
+        return -EIO;
+    }
+
+    mysql_free_result(result);
+    
     snprintf(sql, SQL_MAX,
              "DELETE FROM %s WHERE name='%s' AND parent=%ld",
              tables->tree, esc_name, parent);
