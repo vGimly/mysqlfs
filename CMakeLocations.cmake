@@ -86,6 +86,8 @@ set( lib_locations
   /usr/local/lib
   /usr/lib64
   /usr/lib
+  /usr/lib/x86_64-linux-gnu
+  /usr/lib/i386-linux-gnu
   /opt/lib
   /opt/local/lib
   /sw/lib
