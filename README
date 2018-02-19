@@ -16,10 +16,15 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
   - fuse-devel libs
   - mysql-devel libs
 
+  On Debian 9 you can install requirements with:
+  #> sudo apt install -y cmake g++ libfuse-dev libmariadbclient-dev-compat
+
   Run the following commands:
   #> cmake .
   #> make
   #> make install
+
+  Instead of last command 'make install' you can use 'checkinstall' to build the DEB-package.
 
 ===> First installation / upgrading
 
@@ -27,18 +32,22 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
 
 1. Create a database and a MySQL account
    mysql> CREATE DATABASE mysqlfs;
-   mysql> GRANT SELECT, INSERT, UPDATE, DELETE ON mysqlfs.* TO mysqlfs@"%" IDENTIFIED BY 'password';
+   mysql> GRANT ALL PRIVILEGES ON mysqlfs.* TO mysqlfs@"%" IDENTIFIED BY 'pass';
    mysql> FLUSH PRIVILEGES;
 
 2. Execute mysqlfs_setup and answer to the questions about your db.
 
-4. Mount the filesystem (please change the parameters accordingly)
-   $ mkdir fs
-   $ ./mysqlfs -ohost=localhost -ouser=user -opassword=pass -odatabase=mysqlfs fs
+4. Mount the filesystem (please change the parameters <> accordingly)
+   $ mkdir /mnt/fs
+   $ mysqlfs -ohost=<host> -ouser=<user> -opassword=<pass> -odatabase=<mysqlfs> /mnt/fs
 
 5. Instead of setting connection options on the command line
    you may create a [mysqlfs] section in your ~/.my.cnf file and
    set the parameters there.
+
+6. Mount on boot: add into /etc/fstab the next line
+   mysqlfs /mnt/fs fuse host=<host>,user=<user>,password=<pass>,database=<mysqlfs>,allow_other,big_writes,x-systemd.automount 0 2
+
 
 ===> Upgrading from 0.4.0 or lower versions
 
@@ -90,10 +99,12 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
   * Fedora Linux 15
   * Debian Linux 6
   * Debian Linux 7
+  * Debian Linux 9
 
   * MySQL 5.1
   * MySQL 5.5
   * MySQL 5.6
+  * MariaDB 10.1
 
   NOTE:
   * FreeBSD 9 + FUSE-KMOD is NOT supported
