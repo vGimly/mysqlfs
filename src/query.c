@@ -172,8 +172,8 @@ int query_inode_full(MYSQL *mysql, const char *path, char *name, size_t name_len
 	  pathptr = NULL;
 	}
 
-        mysql_real_escape_string(mysql, esc_name, nameptr, strlen(nameptr));
-	sql_from_end += snprintf(sql_from_end, SQL_MAX, " LEFT JOIN %s AS t%d ON t%d.inode = t%d.parent",
+    mysql_real_escape_string(mysql, esc_name, nameptr, strlen(nameptr));
+	sql_from_end += snprintf(sql_from_end, SQL_MAX, " JOIN %s AS t%d ON t%d.inode = t%d.parent",
 		 tables->tree, depth, depth-1, depth);
 	sql_where_end += snprintf(sql_where_end, SQL_MAX, " AND t%d.name = '%s'",
 		 depth, esc_name);
@@ -183,12 +183,12 @@ int query_inode_full(MYSQL *mysql, const char *path, char *name, size_t name_len
     // TODO: Only run subquery when pointer to nlinks != NULL, otherwise we don't need it.
     if (nlinks != NULL) {
         snprintf(sql, SQL_MAX, "SELECT t%d.inode, t%d.name, t%d.parent, "
-        	     		   "       (SELECT COUNT(inode) FROM %s AS t%d WHERE t%d.inode=t%d.inode) "
-        			   "               AS nlinks "
-        	     		   "FROM %s WHERE %s",
-        	     depth, depth, depth, 
-        	     tables->tree, depth+1, depth+1, depth,
-        	     sql_from, sql_where);
+                        "       (SELECT COUNT(inode) FROM %s AS t%d WHERE t%d.inode=t%d.inode) "
+                        "               AS nlinks "
+                        "FROM %s WHERE %s",
+                    depth, depth, depth, 
+                    tables->tree, depth+1, depth+1, depth,
+                    sql_from, sql_where);
     }
     else
     {
