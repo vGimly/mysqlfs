@@ -46,7 +46,11 @@ unsigned int lifo_pool_cnt = 0;
 static MYSQL *pool_open_mysql_connection()
 {
     MYSQL *mysql;
+#if defined(LIBMYSQL_VERSION_ID) && (LIBMYSQL_VERSION_ID >= 80000)
+    bool reconnect = 1;
+#else
     my_bool reconnect = 1;
+#endif
 
     mysql = mysql_init(NULL);
     if (!mysql) {
