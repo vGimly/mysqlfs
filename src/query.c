@@ -711,9 +711,15 @@ int query_read(MYSQL *mysql, long inode, const char *buf, size_t size,
     fill_data_blocks_info(&info, size, offset);
 
     /* Read all required blocks */
-    snprintf(sql, SQL_MAX,
-             "SELECT seq, data, datalength FROM %s WHERE inode=%ld AND seq>=%lu AND seq <=%lu ORDER BY seq ASC",
-	     tables->data_blocks, inode, info.seq_first, info.seq_last);
+    if (info.seq_first == info.seq_last) {
+        snprintf(sql, SQL_MAX,
+                 "SELECT seq, data, datalength FROM %s WHERE inode=%ld AND seq=%lu",
+	         tables->data_blocks, inode, info.seq_first);
+    } else {
+        snprintf(sql, SQL_MAX,
+                 "SELECT seq, data, datalength FROM %s WHERE inode=%ld AND seq>=%lu AND seq <=%lu ORDER BY seq ASC",
+	         tables->data_blocks, inode, info.seq_first, info.seq_last);
+    }
 
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
 
