@@ -1460,7 +1460,8 @@ int query_fsck(MYSQL *mysql)
     }
 
     // flush any pending result from previous queries
-   for(; mysql_next_result(mysql) == 0;)
+    for(; mysql_next_result(mysql) == 0;)
+        /* do nothing */;
 
     // 7. Optimize general tables
     printf("Stage 7... optimizing tables\n");
@@ -1476,6 +1477,10 @@ int query_fsck(MYSQL *mysql)
         log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
         return -EIO;
     }
+
+    // flush any pending result from previous queries
+    for(; mysql_next_result(mysql) == 0;)
+        /* do nothing */;
 
     printf("Stage 7... optimizing tree table\n");
     snprintf(sql, SQL_MAX,
