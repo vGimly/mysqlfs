@@ -1467,8 +1467,7 @@ int query_fsck(MYSQL *mysql)
     printf("Stage 7... optimizing tables\n");
 
     printf("Stage 7... optimizing inodes table\n");
-    snprintf(sql, SQL_MAX,
-             "OPTIMIZE TABLE %s", tables->inodes);
+    snprintf(sql, SQL_MAX, "OPTIMIZE TABLE %s", tables->inodes);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
 
     ret = mysql_query(mysql, sql);
@@ -1477,14 +1476,16 @@ int query_fsck(MYSQL *mysql)
         log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
         return -EIO;
     }
+
+    myresult = mysql_store_result(mysql);
+    mysql_free_result(myresult);
 
     // flush any pending result from previous queries
     for(; mysql_next_result(mysql) == 0;)
         /* do nothing */;
 
     printf("Stage 7... optimizing tree table\n");
-    snprintf(sql, SQL_MAX,
-             "OPTIMIZE TABLE %s", tables->tree);
+    snprintf(sql, SQL_MAX, "OPTIMIZE TABLE %s", tables->tree);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
 
     ret = mysql_query(mysql, sql);
@@ -1493,6 +1494,13 @@ int query_fsck(MYSQL *mysql)
         log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
         return -EIO;
     }
+
+    myresult = mysql_store_result(mysql);
+    mysql_free_result(myresult);
+
+    // flush any pending result from previous queries
+    for(; mysql_next_result(mysql) == 0;)
+        /* do nothing */;
 
     printf("fsck done!\n");
     return ret;
