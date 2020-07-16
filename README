@@ -118,5 +118,5 @@ MySQLfs is a FUSE filesystem driver which stores files in a MySQL database.
 
 Copyright (C) 2006 Tsukasa Hamano <code@cuspy.org>
 Copyright (C) 2006 Michal Ludvig <michal@logix.cz>
-Copyright (C) 2012-2014 Andrea Brancatelli <andrea@brancatelli.it>
+Copyright (C) 2012-2020 Andrea Brancatelli <andrea@brancatelli.it>
 

@@ -2,6 +2,7 @@
   mysqlfs - MySQL Filesystem
   Copyright (C) 2006 Tsukasa Hamano <code@cuspy.org>
   Copyright (C) 2006,2007 Michal Ludvig <michal@logix.cz>
+  Copyright (C) 2012-2020 Andrea Brancatelli <andrea@brancatelli.it>
   $Id$
 
   This program can be distributed under the terms of the GNU GPL.
@@ -1316,6 +1317,7 @@ int query_set_deleted(MYSQL *mysql, long inode)
  * -# set inuse=0 for all inodes
  * -# delete data without existing inode
  * -# synchronize inodes.size=data.LENGTH(data)
+ * -# recalculate statistics table
  * -# optimize tables
  *
  * @return return from call to mysql_query()
@@ -1434,10 +1436,37 @@ int query_fsck(MYSQL *mysql)
     }
     mysql_free_result(myresult);
 
-/*    printf("optimizing tables\n");
+    // 6. Recalculate statistics tables
+    printf("Stage 6...\n");
+
+    printf("Stage 6... recompute total files count\n");
+    snprintf(sql, SQL_MAX, "UPDATE %s, %s SET %s.value = COUNT(%s.*) WHERE %s.key = 'total_inodes_count';", tables->statistics, tables->inodes, tables->statistics, tables->inodes, tables->statistics);
+    log_printf(LOG_D_SQL, "sql=%s\n", sql);
+    ret = mysql_query(mysql, sql);
+    if(ret){
+        log_printf(LOG_ERROR, "Error: mysql_query()\n");
+        log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
+        return -EIO;
+    }
+
+    printf("Stage 6... recompute total files size\n");
+    snprintf(sql, SQL_MAX, "UPDATE %s, %s SET %s.value = SUM(%s.size) WHERE %s.key = 'total_inodes_size';", tables->statistics, tables->inodes, tables->statistics, tables->inodes, tables->statistics);
+    snprintf(sql, SQL_MAX, "update %s set size=%ld where inode=%ld;", tables->inodes, size, inode);
+    log_printf(LOG_D_SQL, "sql=%s\n", sql);
+    ret = mysql_query(mysql, sql);
+    if(ret){
+        log_printf(LOG_ERROR, "Error: mysql_query()\n");
+        log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
+        return -EIO;
+    }
+
+
+    // 7. Optimize general tables
+    printf("Stage 7... optimizing tables\n");
+
+    printf("Stage 7... optimizing inodes table\n");
     snprintf(sql, SQL_MAX,
              "OPTIMIZE TABLE %s;", tables->inodes);
-
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
 
     ret = mysql_query(mysql, sql);
@@ -1446,7 +1475,19 @@ int query_fsck(MYSQL *mysql)
         log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
         return -EIO;
     }
-*/
+
+    printf("Stage 7... optimizing tree table\n");
+    snprintf(sql, SQL_MAX,
+             "OPTIMIZE TABLE %s;", tables->tree);
+    log_printf(LOG_D_SQL, "sql=%s\n", sql);
+
+    ret = mysql_query(mysql, sql);
+    if(ret){
+        log_printf(LOG_ERROR, "Error: mysql_query()\n");
+        log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
+        return -EIO;
+    }
+
     printf("fsck done!\n");
     return ret;
 
@@ -1470,7 +1511,7 @@ fsfilcnt_t query_total_inodes(MYSQL *mysql)
     MYSQL_ROW row;
     fsfilcnt_t inodes;
 
-    snprintf(sql, SQL_MAX, "SELECT COUNT(*) FROM %s", tables->inodes);
+    snprintf(sql, SQL_MAX, "SELECT CAST(%s.value AS UNSIGNED) FROM %s WHERE %s.key = 'total_inodes_count'", tables->statistics, tables->statistics, tables->statistics);
 
     ret = mysql_query(mysql, sql);
     if(ret){
@@ -1520,7 +1561,7 @@ fsblkcnt_t query_total_blocks(MYSQL *mysql)
     MYSQL_ROW row;
     fsblkcnt_t blocks;
 
-    snprintf(sql, SQL_MAX, "SELECT CEIL(SUM(size)/%d) from %s", DATA_BLOCK_SIZE, tables->inodes);
+    snprintf(sql, SQL_MAX, "SELECT CEIL(CAST(%s.value AS UNSIGNED)/%d) from %s WHERE %s.key = 'total_inodes_size'", tables->statistics, DATA_BLOCK_SIZE, tables->statistics, tables->statistics);
 
     ret = mysql_query(mysql, sql);
     if(ret){
@@ -1572,15 +1613,19 @@ void query_tablename_init(char *prefix)
     tables->inodes = malloc(prefixlength + 8);        // Remember the null!
     tables->tree = malloc(prefixlength + 5);
     tables->data_blocks = malloc(prefixlength + 12);
+    tables->statistics = malloc(prefixlength + 11);
     strcpy(tables->inodes, prefix);
     strcat(tables->inodes, "inodes");
     strcpy(tables->tree, prefix);
     strcat(tables->tree, "tree");
     strcpy(tables->data_blocks, prefix);
     strcat(tables->data_blocks, "data_blocks");
+    strcpy(tables->statistics, prefix);
+    strcat(tables->statistics, "statistics");
 
     fprintf(stderr, " ** Tree table: %s\n", tables->tree);
     fprintf(stderr, " ** Inodes table: %s\n", tables->inodes);
     fprintf(stderr, " ** Data blocks table: %s\n", tables->data_blocks);
+    fprintf(stderr, " ** Statistics table: %s\n", tables->statistics);
 
 }
