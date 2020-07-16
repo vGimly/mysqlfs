@@ -1440,7 +1440,7 @@ int query_fsck(MYSQL *mysql)
     printf("Stage 6...\n");
 
     printf("Stage 6... recompute total files count\n");
-    snprintf(sql, SQL_MAX, "UPDATE %s, %s SET %s.value = COUNT(%s.*) WHERE %s.key = 'total_inodes_count';", tables->statistics, tables->inodes, tables->statistics, tables->inodes, tables->statistics);
+    snprintf(sql, SQL_MAX, "UPDATE %s SET %s.value = (select COUNT(*) from %s) WHERE %s.key = 'total_inodes_count';", tables->statistics, tables->statistics, tables->inodes, tables->statistics);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     ret = mysql_query(mysql, sql);
     if(ret){
@@ -1451,7 +1451,6 @@ int query_fsck(MYSQL *mysql)
 
     printf("Stage 6... recompute total files size\n");
     snprintf(sql, SQL_MAX, "UPDATE %s, %s SET %s.value = SUM(%s.size) WHERE %s.key = 'total_inodes_size';", tables->statistics, tables->inodes, tables->statistics, tables->inodes, tables->statistics);
-    snprintf(sql, SQL_MAX, "update %s set size=%ld where inode=%ld;", tables->inodes, size, inode);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     ret = mysql_query(mysql, sql);
     if(ret){

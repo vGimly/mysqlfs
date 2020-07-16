@@ -780,7 +780,7 @@ static int mysqlfs_opt_proc(void *data, const char *arg, int key, struct fuse_ar
 	/*
 	 * There are primitives for this in FUSE, but no need to change at this point
 	 */
-	    fprintf(stderr, "Ignoring option %s", arg);
+	    fprintf(stderr, "Ignoring option %s\n", arg);
             break;
 
         case KEY_DEBUG_DNQ:
