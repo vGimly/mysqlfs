@@ -1,6 +1,5 @@
 # MySQL 5.6 or higher compatibility
 
-ALTER TABLE `data_blocks` CHANGE `datalength` `datalength` INT(8)  UNSIGNED  NOT NULL  DEFAULT '0';
 ALTER TABLE `data_blocks` CHANGE `seq` `seq` INT(10)  UNSIGNED  NOT NULL  DEFAULT '0';
 
 CREATE TABLE `statistics` (
