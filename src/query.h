@@ -29,6 +29,7 @@ struct table_names {
     char *inodes;               /**< inodes table name */
     char *tree;                 /**< tree table name */
     char *data_blocks;          /**< data_blocks table name */
+    char *statistics;           /**< statistics table name */
 };
 
 
