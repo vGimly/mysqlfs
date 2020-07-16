@@ -1440,7 +1440,7 @@ int query_fsck(MYSQL *mysql)
     printf("Stage 6...\n");
 
     printf("Stage 6... recompute total files count\n");
-    snprintf(sql, SQL_MAX, "UPDATE %s SET %s.value = (SELECT COUNT(*) FROM %s) WHERE %s.key = 'total_inodes_count';", tables->statistics, tables->statistics, tables->inodes, tables->statistics);
+    snprintf(sql, SQL_MAX, "UPDATE %s SET %s.value = (SELECT COUNT(*) FROM %s) WHERE %s.key = 'total_inodes_count'", tables->statistics, tables->statistics, tables->inodes, tables->statistics);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     ret = mysql_query(mysql, sql);
     if(ret){
@@ -1450,7 +1450,7 @@ int query_fsck(MYSQL *mysql)
     }
 
     printf("Stage 6... recompute total files size\n");
-    snprintf(sql, SQL_MAX, "UPDATE %s SET %s.value = (SELECT SUM(size) FROM %s) WHERE %s.key = 'total_inodes_size';", tables->statistics, tables->statistics, tables->inodes, tables->statistics);
+    snprintf(sql, SQL_MAX, "UPDATE %s SET %s.value = (SELECT SUM(size) FROM %s) WHERE %s.key = 'total_inodes_size'", tables->statistics, tables->statistics, tables->inodes, tables->statistics);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
     ret = mysql_query(mysql, sql);
     if(ret){
@@ -1459,13 +1459,15 @@ int query_fsck(MYSQL *mysql)
         return -EIO;
     }
 
+    // flush any pending result from previous queries
+   for(; mysql_next_result(mysql) == 0;)
 
     // 7. Optimize general tables
     printf("Stage 7... optimizing tables\n");
 
     printf("Stage 7... optimizing inodes table\n");
     snprintf(sql, SQL_MAX,
-             "OPTIMIZE TABLE %s;", tables->inodes);
+             "OPTIMIZE TABLE %s", tables->inodes);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
 
     ret = mysql_query(mysql, sql);
@@ -1477,7 +1479,7 @@ int query_fsck(MYSQL *mysql)
 
     printf("Stage 7... optimizing tree table\n");
     snprintf(sql, SQL_MAX,
-             "OPTIMIZE TABLE %s;", tables->tree);
+             "OPTIMIZE TABLE %s", tables->tree);
     log_printf(LOG_D_SQL, "sql=%s\n", sql);
 
     ret = mysql_query(mysql, sql);
