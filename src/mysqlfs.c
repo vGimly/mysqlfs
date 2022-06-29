@@ -664,6 +664,103 @@ static int mysqlfs_statfs(const char *path, struct statvfs *buf)
         return 0;
 }
 
+static int
+mysqlfs_removexattr(const char *path, const char *attr)
+{
+    int ret;
+    long inode;
+    MYSQL *dbconn;
+
+    log_printf(LOG_D_CALL, "%s(%s:%s)\n", __func__, path, attr);
+
+    if ((dbconn = pool_get()) == NULL)
+      return -EMFILE;
+
+    inode = query_inode(dbconn, path);
+
+    if(inode < 0) ret=-ENOENT;
+    else
+        ret = query_rmxattr(dbconn, attr, inode);
+
+    pool_put(dbconn);
+
+    return ret;
+}
+
+static int
+mysqlfs_getxattr(const char *path, const char *attr, char * val, size_t sz)
+{
+    int ret;
+    long inode;
+    MYSQL *dbconn;
+
+    log_printf(LOG_D_CALL, "%s(%s:%s)->%ld\n", __func__, path, attr, sz);
+
+    if ((dbconn = pool_get()) == NULL)
+      return -EMFILE;
+
+    inode = query_inode(dbconn, path);
+    if(inode < 0) ret=-ENOENT;
+    else {
+        ret = query_getxattr(dbconn, attr, inode, val, sz);
+        log_printf(LOG_DEBUG, "%s(%s)=%ld\n", __func__, path, ret);
+    }
+
+    pool_put(dbconn);
+
+    return ret;
+}
+
+static int
+mysqlfs_listxattr(const char *path, char * val, size_t sz)
+{
+    int ret;
+    long inode;
+    MYSQL *dbconn;
+
+    log_printf(LOG_D_CALL, "%s(%s)\n", __func__, path);
+
+    if ((dbconn = pool_get()) == NULL)
+      return -EMFILE;
+
+    inode = query_inode(dbconn, path);
+
+    if(inode < 0) ret=-ENOENT;
+    else
+    {
+        ret = query_lsxattr(dbconn, inode, val, sz);
+        log_printf(LOG_DEBUG, "%s(%s)=%ld\n", __func__, path, ret);
+    }
+    pool_put(dbconn);
+
+    return ret;
+}
+
+static int
+mysqlfs_setxattr(const char *path, const char * attr, const char * val, size_t sz, int flags)
+{
+    int ret;
+    long inode;
+    MYSQL *dbconn;
+
+    log_printf(LOG_D_CALL, "%s(%s:%s,fl=%d)<-%ld\n", __func__, path, attr, flags, sz);
+
+    if ((dbconn = pool_get()) == NULL)
+      return -EMFILE;
+
+    inode = query_inode(dbconn, path);
+
+    if(inode < 0) ret=-ENOENT;
+    else
+    {
+        ret = query_setxattr(dbconn, attr, inode, val, sz, flags);
+        log_printf(LOG_DEBUG, "%s(%s:%s)=%ld\n", __func__, path, attr, ret);
+    }
+    pool_put(dbconn);
+
+    return ret;
+}
+
 
 /** used below in fuse_main() to define the entry points for a FUSE filesystem; this is the same VMT-like jump table used throughout the UNIX kernel. */
 static struct fuse_operations mysqlfs_oper = {
@@ -687,6 +784,11 @@ static struct fuse_operations mysqlfs_oper = {
     .rename	= mysqlfs_rename,
     .create	= mysqlfs_create,
     .statfs     = mysqlfs_statfs,
+
+    .setxattr   = mysqlfs_setxattr,
+    .getxattr   = mysqlfs_getxattr,
+    .listxattr  = mysqlfs_listxattr,
+    .removexattr= mysqlfs_removexattr,
 };
 
 /** print out a brief usage aide-memoire to stderr */

@@ -30,6 +30,7 @@ struct table_names {
     char *tree;                 /**< tree table name */
     char *data_blocks;          /**< data_blocks table name */
     char *statistics;           /**< statistics table name */
+    char *xattr;                /**< xattr table name */
 };
 
 
@@ -69,3 +70,9 @@ void query_tablename_init(char *prefix);
 
 fsfilcnt_t query_total_inodes(MYSQL *mysql);
 fsblkcnt_t query_total_blocks(MYSQL *mysql);
+
+/* xattr operations */
+int query_rmxattr(MYSQL *mysql, const char *name, long inode);
+int query_getxattr(MYSQL *mysql, const char *name, long inode, char * buf, size_t sz);
+int query_lsxattr(MYSQL *mysql, long inode, char * buf, size_t sz);
+int query_setxattr(MYSQL *mysql, const char * attr, long inode, const char * val, size_t sz, int flags);

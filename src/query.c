@@ -22,6 +22,7 @@
 #include <fuse/fuse.h>
 
 #include <mysql/mysql.h>
+#include <sys/xattr.h>
 
 #include "mysqlfs.h"
 #include "query.h"
@@ -1628,6 +1629,7 @@ void query_tablename_init(char *prefix)
     tables->tree = malloc(prefixlength + 5);
     tables->data_blocks = malloc(prefixlength + 12);
     tables->statistics = malloc(prefixlength + 11);
+    tables->xattr = malloc(prefixlength + 6);
     strcpy(tables->inodes, prefix);
     strcat(tables->inodes, "inodes");
     strcpy(tables->tree, prefix);
@@ -1636,10 +1638,260 @@ void query_tablename_init(char *prefix)
     strcat(tables->data_blocks, "data_blocks");
     strcpy(tables->statistics, prefix);
     strcat(tables->statistics, "statistics");
+    strcpy(tables->xattr, prefix);
+    strcat(tables->xattr, "xattr");
 
     fprintf(stderr, " ** Tree table: %s\n", tables->tree);
     fprintf(stderr, " ** Inodes table: %s\n", tables->inodes);
     fprintf(stderr, " ** Data blocks table: %s\n", tables->data_blocks);
     fprintf(stderr, " ** Statistics table: %s\n", tables->statistics);
+    fprintf(stderr, " ** xAttr table: %s\n", tables->xattr);
+
+}
+
+
+/**
+ * The opposite of query_setxattr(), this function deletes a eXtended attributes from the inode given.
+ *
+ * @return 0 if successful
+ * @return -EIO if the result of mysql_query() is non-zero
+ * @param mysql handle to connection to the database
+ * @param name name of attribute to delete
+ * @param inode inode of file/directory holding attribute
+ */
+int query_rmxattr(MYSQL *mysql, const char *attr, long inode)
+{
+    int ret;
+    char sql[SQL_MAX];
+    char esc_attr[PATH_MAX * 2];
+
+    mysql_real_escape_string(mysql, esc_attr, attr, strlen(attr));
+    snprintf(sql, SQL_MAX,
+             "DELETE FROM %s WHERE attr='%s' AND inode=%ld",
+             tables->xattr, esc_attr, inode);
+
+    log_printf(LOG_D_SQL, "sql=%s\n", sql);
+    ret = mysql_query(mysql, sql);
+    if(ret) {
+      log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
+      return -EIO;
+    }
+
+    return 0;
+}
+
+/**
+ * Gets a value of eXtended ATTRibute for the inode given.
+ *
+ * @return 0 if successful
+ * @return -EIO if the result of mysql_query() is non-zero
+ * @return -ENODATA if no attribute with given name exists on inode
+ * @return -ERANGE if length of value of attribute exceeded buffer size
+ * @param mysql handle to connection to the database
+ * @param attr name of attribute to operate
+ * @param inode inode of file/directory holding attribute
+ * @param buf resulting buffer to get attribute value
+ * @param sz resulting buffer size;
+ *        if sz=0, functions returns buffer size needed, to hold attribute value
+ */
+int query_getxattr(MYSQL *mysql, const char *attr, long inode, char * buf, size_t sz)
+{
+    int ret;
+    char sql[SQL_MAX];
+    char esc_attr[PATH_MAX * 2];
+    MYSQL_RES* result;
+    MYSQL_ROW row;
+    unsigned long * lengths;
+
+    mysql_real_escape_string(mysql, esc_attr, attr, strlen(attr));
+    snprintf(sql, SQL_MAX,
+             "SELECT value FROM %s WHERE attr='%s' AND inode=%ld",
+             tables->xattr, esc_attr, inode);
+
+    ret = mysql_query(mysql, sql);
+    if(ret) {
+      log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
+      return -EIO;
+    }
+
+    result = mysql_use_result(mysql);
+    if(!result){
+        log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
+        return -EIO;
+    }
+
+    row = mysql_fetch_row(result);
+    if (row == NULL ) ret=-ENODATA;
+    else {
+    lengths=mysql_fetch_lengths(result);
+    if (lengths == NULL) ret=-ENODATA;
+    else
+    if (!sz) ret=*lengths;
+    else if (*lengths > sz) ret=-ERANGE;
+    else {
+        ret=*lengths;
+        memcpy(buf,row[0],ret);
+    }}
+
+    mysql_free_result(result);
+
+    return ret;
+}
+
+/**
+ * Gets a names of all eXtended ATTRibutes for the inode given.
+ * The outout is the list is zero-terminated strings.
+ *
+ * @return number of bytes, written on buffer if successful
+ * @return -EIO if the result of mysql_query() is non-zero
+ * @return -ERANGE if length of attribute names list exceeded input buffer size
+ * @param mysql handle to connection to the database
+ * @param inode inode of file/directory holding attribute
+ * @param buf resulting buffer to get attribute names
+ * @param sz resulting buffer size in bytes;
+ *        if sz=0, functions returns buffer size needed, to hold attribute list.
+ */
+int query_lsxattr(MYSQL *mysql, long inode, char * buf, size_t sz)
+{
+    int ptr=0;
+    char sql[SQL_MAX];
+    MYSQL_RES* result;
+    MYSQL_ROW row;
+    unsigned long * lengths;
+    ssize_t len;
+
+    snprintf(sql, SQL_MAX,
+             "SELECT attr FROM %s WHERE inode=%ld", table->xattr,
+             inode);
+
+    if(mysql_query(mysql, sql)) {
+      log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
+      return -EIO;
+    }
+
+    result = mysql_store_result(mysql);
+    if(!result){
+        log_printf(LOG_ERROR, "mysql_error: %s\n", mysql_error(mysql));
+        return -EIO;
+    }
+
+    while ((row = mysql_fetch_row(result))!=NULL) {
+      lengths=mysql_fetch_lengths(result);
+      len=*lengths;
+      log_printf(LOG_INFO, "got_line: '%s' len=%ld sz=%ld, ptr=%ld\n", row[0], len, sz, ptr);
+      if (!sz){ptr+=len+1;}
+      else{
+      if (len+ptr >= sz) {ptr=-ERANGE;break;}
+        memcpy(buf+ptr,row[0],len);
+        ptr+=len+1;
+        buf[ptr-1]=0;
+      }
+    }
+    mysql_free_result(result);
+
+    return ptr;
+}
+
+/**
+ * Sets a value of eXtended ATTRibute for the inode given.
+ * The outout is the list is zero-terminated strings.
+ *
+ * @return 0 if successful
+ * @return -EIO if the result of mysql_query() is non-zero
+ * @return -ERANGE if length of attribute names list exceeded input buffer size
+ * @return -EINVAL invalid flags value
+ * @return -EEXIST attribute already exists and flags=XATTR_CREATE
+ * @return -ENODATA attribute not exists and flags=XATTR_REPLACE
+ * @return -EPERM attribute is not set and flags=0 (probably table write permission?)
+ * @param mysql handle to connection to the database
+ * @param attr name of attribute to operate
+ * @param inode inode of file/directory holding attribute
+ * @param val value of attribute, arbitrary binary string
+ * @param sz size of value in bytes
+ * @param flags operation mode:
+ *   0 - create attribute, replace if attribute exists
+ *   XATTR_CREATE=1 - create attribute, fail if exists
+ *   XATTR_REPLACE=2 - replace existing attribute, fail if not exists
+ */
+int query_setxattr(MYSQL *mysql, const char * attr, long inode, const char * val, size_t sz, int flags)
+{
+MYSQL_STMT *stmt;
+MYSQL_BIND ps_params[3];
+unsigned long ino_len=sizeof(inode),attr_len=strlen(attr),val_sz=sz;
+uint64_t affected_rows;
+my_bool is_null=0,err_ino,err_attr,err_val;
+const char * query;
+char sql[SQL_MAX];
+
+switch (flags){
+// https://man7.org/linux/man-pages/man2/setxattr.2.html
+  case 0: query = "REPLACE into %s (value, attr,  inode) VALUES (?, ?, ?)"; break;
+  case XATTR_CREATE: query ="INSERT IGNORE into %s (value, attr, inode) VALUES (?, ?, ?)"; break;
+  case XATTR_REPLACE: query="UPDATE %s SET value=? WHERE attr=? AND inode=?"; break;
+  default: return -EINVAL;
+}
+stmt = mysql_stmt_init(mysql);
+if (mysql_stmt_prepare(stmt, sql, snprintf(sql,SQL_MAX, query, tables->xattr))){
+    log_printf(LOG_ERROR, "mysql_stmt_prepare() failed: %s\n", mysql_stmt_error(stmt));
+    return -EIO;
+    }
+
+    if (mysql_stmt_param_count(stmt) != 3) {
+      log_printf(LOG_ERROR, "%s(): stmt_param_count=%d, expected 3\n", __func__, mysql_stmt_param_count(stmt));
+      mysql_stmt_close(stmt);
+      return -EIO;
+    }
+
+memset(ps_params, 0, sizeof(ps_params));
+
+ps_params[2].buffer_type=MYSQL_TYPE_LONG;
+ps_params[2].buffer=&inode;
+//ps_params[2].buffer_length=0;
+//ps_params[2].length=0;
+//ps_params[2].is_null=0;
+ps_params[2].is_unsigned=1;
+ps_params[2].error=&err_ino;
+
+ps_params[1].buffer_type=MYSQL_TYPE_STRING;
+ps_params[1].buffer=(char*)attr;
+ps_params[1].buffer_length=attr_len;
+ps_params[1].length=&attr_len;
+//ps_params[1].is_null=0;
+ps_params[1].error=&err_attr;
+
+ps_params[0].buffer_type=MYSQL_TYPE_BLOB;
+ps_params[0].buffer=(char*)val;
+ps_params[0].buffer_length=val_sz;
+ps_params[0].length=&val_sz;
+//ps_params[0].is_null=0;
+ps_params[0].error=&err_val;
+
+if (mysql_stmt_bind_param(stmt, ps_params)){
+      log_printf(LOG_ERROR, "%s(): mysql_stmt_bind_param error: %s\n", __func__,mysql_stmt_error(stmt));
+      mysql_stmt_close(stmt);
+      return -EIO;
+}
+
+if (mysql_stmt_execute(stmt)){
+      log_printf(LOG_ERROR, "%s(): mysql_stmt_execute error: %s\n", __func__,mysql_stmt_error(stmt));
+      mysql_stmt_close(stmt);
+      return -EIO;
+}
+
+affected_rows= mysql_stmt_affected_rows(stmt);
+
+if (mysql_stmt_close(stmt)){
+      log_printf(LOG_ERROR, "%s(): mysql_stmt_close error: %s\n", __func__,mysql_error(mysql));
+      return -EIO;
+}
+
+if (!affected_rows){
+  switch (flags){
+    case XATTR_CREATE: return -EEXIST;
+    case XATTR_REPLACE: return -ENODATA;
+    default: return -EPERM;
+  }
+}
+  return 0;
 
 }
