@@ -14,6 +14,7 @@ extern FILE *log_file;
 
 /** bitfield of the log levels that are to be logged to the log_file.  Defaults to LOG_ERROR | LOG_INFO */
 extern int log_types_mask;
+extern int log_debug_mask;
 
 /** defines logging-levels similar to syslog */
 enum log_types {

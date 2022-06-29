@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ##
 ##  MySQLfs - kickoff and upgrade scripts
@@ -32,33 +32,19 @@ echo
 echo In order to setup/upgrade your DB we need some informations.
 echo
 
+# You can run DBHost= DBName= DBUser=user DBPass=pass ./mysqlfs_setup
+# make it empty, for default paramethers
 echo "Please insert your DB host (leave blank for localhost):"
-printf "#> "
-read DBHost
-if [ "$DBHost" = "" ]; then
-	DBHost="localhost"
-fi
+[[ ! -v DBHost ]] && printf "#> " && read DBHost; DBHost=${DBHost:-localhost}
 
 echo "Please insert your MySQLfs DB name (leave blank for mysqlfs):"
-printf "#> "
-read DBName
-if [ "$DBName" = "" ]; then
-	DBName="mysqlfs"
-fi
+[[ ! -v DBName ]] && printf "#> " && read DBName; DBName=${DBName:-mysqlfs}
 
 echo "Please insert your MySQLfs username (leave blank for mysqlfs):"
-printf "#> "
-read DBUser
-if [ "$DBUser" = "" ]; then
-	DBUser="mysqlfs"
-fi
+[[ ! -v DBUser ]] && printf "#> " && read DBUser; DBUser=${DBUser:-mysqlfs}
 
 echo "Please insert your MySQLfs password (leave blank for mysqlfs):"
-printf "#> "
-read DBPass
-if [ "$DBPass" = "" ]; then
-	DBPass="mysqlfs"
-fi
+[[ ! -v DBPass ]] && printf "#> " && read DBPass; DBPass=${DBPass:-mysqlfs}
 
 echo
 echo Please confirm the following settings:

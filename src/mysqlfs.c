@@ -858,6 +858,7 @@ static struct fuse_opt mysqlfs_opts[] =
     MYSQLFS_OPT_KEY(  "user=%s",	user,	0),
     MYSQLFS_OPT_KEY("--user=%s",	user,	0),
     MYSQLFS_OPT_KEY( "-u %s",		user,	0),
+    MYSQLFS_OPT_KEY( "-d",		debug,	0xFF),//LOG_ERROR | LOG_INFO |  LOG_DEBUG),
 
     FUSE_OPT_KEY("debug-dnq",	        KEY_DEBUG_DNQ),
     FUSE_OPT_KEY("allow_other",         KEY_NOPRIVATE),
@@ -942,6 +943,7 @@ int main(int argc, char *argv[])
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
     struct mysqlfs_opt opt = {
 	.init_conns	= 1,
+	.debug=LOG_ERROR | LOG_INFO,
 	.max_idling_conns = 5,
 	.mycnf_group	= "mysqlfs",
 	.logfile	= "mysqlfs.log",
@@ -952,11 +954,13 @@ int main(int argc, char *argv[])
     fprintf (stderr, "\nMySQLfs version %d.%d startup. Using fuse-%d\n\n", MySQLfs_VERSION_MAJOR, MySQLfs_VERSION_MINOR, FUSE_VERSION);
 
     fuse_opt_parse(&args, &opt, mysqlfs_opts, mysqlfs_opt_proc);
+	log_types_mask=opt.debug;
+	if (log_types_mask & LOG_DEBUG) log_debug_mask=0xFFFF;//LOG_D_CALL | LOG_D_SQL | LOG_D_OTHER;
 
     if (pool_init(&opt) < 0) {
         log_printf(LOG_ERROR, "Error: pool_init() failed\n");
         fuse_opt_free_args(&args);
-        return EXIT_FAILURE;        
+        return EXIT_FAILURE;
     }
 
     /*
