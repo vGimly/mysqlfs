@@ -1761,7 +1761,7 @@ int query_lsxattr(MYSQL *mysql, long inode, char * buf, size_t sz)
     ssize_t len;
 
     snprintf(sql, SQL_MAX,
-             "SELECT attr FROM %s WHERE inode=%ld", table->xattr,
+             "SELECT attr FROM %s WHERE inode=%ld", tables->xattr,
              inode);
 
     if(mysql_query(mysql, sql)) {
