@@ -1680,6 +1680,23 @@ int query_rmxattr(MYSQL *mysql, const char *attr, long inode)
     return 0;
 }
 
+struct bhash_struct {
+    const char*name;
+    int ptr;
+    int len;
+};
+
+#define ELEMENTS(A) (sizeof(A)/sizeof(*A))
+
+static struct bhash_struct bhash_off [] = {
+    {"BLAKE3",13,32}, // d + 6:BLAKE3 32:
+    {"CRC32" ,13+32+9,4},
+    {"MD5"   ,13+32+9+4+8,16},
+    {"SHA1"  ,13+32+9+4+8+16+9,20},
+    {"SHA256",13+32+9+4+8+16+9+20+11,32},
+    {NULL,0,0}
+};
+// ''=raw "_hex" + _b64
 /**
  * Gets a value of eXtended ATTRibute for the inode given.
  *
@@ -1702,11 +1719,38 @@ int query_getxattr(MYSQL *mysql, const char *attr, long inode, char * buf, size_
     MYSQL_RES* result;
     MYSQL_ROW row;
     unsigned long * lengths;
+    struct bhash_struct * bh=NULL;
+    const char * bh_mode="(";
+    const int attr_len=strlen(attr);
 
-    mysql_real_escape_string(mysql, esc_attr, attr, strlen(attr));
-    snprintf(sql, SQL_MAX,
+    if (attr && *attr=='#' && attr_len>1){const char * Attr=attr+1;
+    for (bh=bhash_off;bh->name;++bh){
+        int bh_len=strlen(bh->name);
+        if (strncmp(Attr,bh->name,bh_len)) continue;
+        Attr+=bh_len+1;
+        switch(Attr[-1]){
+        case 0: break;
+        case '_':
+            if (!strcmp(Attr,"hex")) bh_mode="LOWER(HEX";
+            else if (!strcmp(Attr,"b64")) bh_mode="(TO_BASE64";
+            else bh=NULL;
+            break;
+        }
+        break;
+    }
+    if (bh && !bh->name) bh=NULL;
+    }
+    if (bh) {
+        snprintf(sql, SQL_MAX,
+             "SELECT %s(substr(value,%d,%d))) FROM %s WHERE attr='#' AND inode=%ld",
+            bh_mode,bh->ptr,bh->len,tables->xattr, inode);
+    }
+    else {
+        mysql_real_escape_string(mysql, esc_attr, attr, attr_len);
+        snprintf(sql, SQL_MAX,
              "SELECT value FROM %s WHERE attr='%s' AND inode=%ld",
              tables->xattr, esc_attr, inode);
+    }
 
     ret = mysql_query(mysql, sql);
     if(ret) {
@@ -1723,15 +1767,16 @@ int query_getxattr(MYSQL *mysql, const char *attr, long inode, char * buf, size_
     row = mysql_fetch_row(result);
     if (row == NULL ) ret=-ENODATA;
     else {
-    lengths=mysql_fetch_lengths(result);
-    if (lengths == NULL) ret=-ENODATA;
-    else
-    if (!sz) ret=*lengths;
-    else if (*lengths > sz) ret=-ERANGE;
-    else {
-        ret=*lengths;
-        memcpy(buf,row[0],ret);
-    }}
+        lengths=mysql_fetch_lengths(result);
+        if (lengths == NULL) ret=-ENODATA;
+        else {
+            ret=*lengths;
+            if (sz) {
+                if (ret > sz) ret=-ERANGE;
+                else memcpy(buf,row[0],ret);
+            }
+        }
+    }
 
     mysql_free_result(result);
 
@@ -1759,7 +1804,7 @@ int query_lsxattr(MYSQL *mysql, long inode, char * buf, size_t sz)
     MYSQL_ROW row;
     unsigned long * lengths;
     ssize_t len;
-
+    int have_bhash=0;
     snprintf(sql, SQL_MAX,
              "SELECT attr FROM %s WHERE inode=%ld", tables->xattr,
              inode);
@@ -1779,13 +1824,26 @@ int query_lsxattr(MYSQL *mysql, long inode, char * buf, size_t sz)
       lengths=mysql_fetch_lengths(result);
       len=*lengths;
       log_printf(LOG_INFO, "got_line: '%s' len=%ld sz=%ld, ptr=%ld\n", row[0], len, sz, ptr);
-      if (!sz){ptr+=len+1;}
-      else{
-      if (len+ptr >= sz) {ptr=-ERANGE;break;}
-        memcpy(buf+ptr,row[0],len);
+        if (sz && len+ptr >= sz) {ptr=-ERANGE;break;}
+        if (len==1 && row[0][0]=='#') have_bhash=1;
+        if (sz) memcpy(buf+ptr,row[0],len);
         ptr+=len+1;
-        buf[ptr-1]=0;
-      }
+        if (sz) buf[ptr-1]=0;
+    }
+
+    if (have_bhash){
+        for (int i=0;i<ELEMENTS(bhash_off);i++){
+            const char * bh=bhash_off[i].name;
+            if (!bh) break;
+            len=strlen(bh)+2;
+            if (sz && len+ptr > sz) {ptr=-ERANGE;break;}
+            if (sz) {
+                buf[ptr]='#';
+                memcpy(buf+ptr+1,bh,len-1);
+            }
+            ptr+=len;
+//          if (sz) buf[ptr-1]=0;
+        }
     }
     mysql_free_result(result);
 
